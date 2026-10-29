@@ -1,0 +1,266 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2024-10-01",
+    "title": "Green Pulse Verified Emission Factors",
+    "description": "Standardized, documented emission factors for calculating carbon footprints in Green Pulse. Sourced from the Central Electricity Authority (CEA) of India, UK DESNZ / DEFRA, IPCC Guidelines for National GHG Inventories, and DMRC Sustainability Reports.",
+    "default_currency": "INR",
+    "default_electricity_tariff_inr": 7.00,
+    "default_petrol_price_inr": 102.50,
+    "default_diesel_price_inr": 89.00
+  },
+  "transportation": {
+    "motorcycle": {
+      "name": "Motorcycle / Scooter (Petrol 100-150cc)",
+      "factor": 0.084,
+      "unit": "kg CO2e / km",
+      "source": "UK DESNZ / DEFRA 2023 & ARAI Indian Commuter Average",
+      "reference_year": 2023,
+      "scope": "Scope 1 (Tailpipe) & Scope 3 (Well-to-Tank)",
+      "occupancy_assumed": 1.0,
+      "description": "Average Indian two-wheeler petrol consumption under urban commuting conditions."
+    },
+    "bus": {
+      "name": "Public Transit Bus (City Route)",
+      "factor": 0.054,
+      "unit": "kg CO2e / passenger-km",
+      "source": "Indian Urban Transit Bus Fleet Study & UK DESNZ 2023 (Occupancy adjusted)",
+      "reference_year": 2023,
+      "scope": "Scope 3 (Commuter travel)",
+      "occupancy_assumed": 40.0,
+      "description": "High-capacity municipal city bus with average daytime passenger occupancy of 40 passengers."
+    },
+    "metro_rail": {
+      "name": "Metro Rail / Urban Electric Train",
+      "factor": 0.035,
+      "unit": "kg CO2e / passenger-km",
+      "source": "Delhi Metro Rail Corporation (DMRC) Sustainability Report & CEA Grid Factor",
+      "reference_year": 2023,
+      "scope": "Scope 3 (Commuter electric transit)",
+      "occupancy_assumed": 250.0,
+      "description": "Mass Rapid Transit System powered by electric traction from regional grid."
+    },
+    "petrol_car": {
+      "name": "Petrol Car (Average Hatchback / Sedan)",
+      "factor": 0.170,
+      "unit": "kg CO2e / km",
+      "source": "UK DESNZ / DEFRA 2023 & MoRTH Indian Fleet Average",
+      "reference_year": 2023,
+      "scope": "Scope 1 & Scope 3",
+      "occupancy_assumed": 1.5,
+      "description": "Average compact/midsize passenger car running on motor gasoline."
+    },
+    "diesel_car": {
+      "name": "Diesel Car (Average SUV / Sedan)",
+      "factor": 0.171,
+      "unit": "kg CO2e / km",
+      "source": "UK DESNZ / DEFRA 2023",
+      "reference_year": 2023,
+      "scope": "Scope 1 & Scope 3",
+      "occupancy_assumed": 1.5,
+      "description": "Average diesel passenger vehicle."
+    },
+    "electric_car": {
+      "name": "Electric Vehicle (EV - Grid Charged)",
+      "factor": 0.053,
+      "unit": "kg CO2e / km",
+      "source": "CEA India National Grid Factor (0.716 kg/kWh) × 0.15 kWh/km average EV consumption",
+      "reference_year": 2024,
+      "scope": "Scope 2 (Grid electricity for charging)",
+      "occupancy_assumed": 1.5,
+      "description": "Battery electric four-wheeler charged using Indian national power grid electricity."
+    },
+    "bicycle_walk": {
+      "name": "Bicycle / Walking (Active Transport)",
+      "factor": 0.000,
+      "unit": "kg CO2e / km",
+      "source": "GHG Protocol Guidelines for Personal Transportation",
+      "reference_year": 2023,
+      "scope": "Direct: Zero Emissions",
+      "occupancy_assumed": 1.0,
+      "description": "Non-motorized zero-carbon active transportation."
+    },
+    "commercial_van": {
+      "name": "Commercial Delivery Van / LCV (Diesel)",
+      "factor": 0.240,
+      "unit": "kg CO2e / km",
+      "source": "UK DESNZ / DEFRA 2023 & Indian Commercial Fleet Benchmark",
+      "reference_year": 2023,
+      "scope": "Scope 1 (Company Owned Fleet)",
+      "occupancy_assumed": 1.0,
+      "description": "Light commercial vehicle used for campus logistics, campus courier, or business transport."
+    },
+    "heavy_truck": {
+      "name": "Heavy Duty Freight Truck (>12t Diesel)",
+      "factor": 0.850,
+      "unit": "kg CO2e / km",
+      "source": "MoRTH Indian Freight Benchmark & DEFRA 2023",
+      "reference_year": 2023,
+      "scope": "Scope 1 / Scope 3 (Freight Logistics)",
+      "occupancy_assumed": 1.0,
+      "description": "Rigid/articulated heavy diesel cargo truck for raw materials and product distribution."
+    },
+    "company_bus": {
+      "name": "Dedicated Employee Shuttle Bus (Diesel)",
+      "factor": 0.680,
+      "unit": "kg CO2e / vehicle-km",
+      "source": "ARAI Medium & Heavy Commercial Vehicle Fleet Baseline",
+      "reference_year": 2023,
+      "scope": "Scope 1 (Direct Shuttle Fleet)",
+      "occupancy_assumed": 35.0,
+      "description": "Company-chartered or owned commuter bus providing employee pickup and drop services."
+    }
+  },
+  "electricity": {
+    "grid_national": {
+      "name": "India National Grid Average Electricity",
+      "factor": 0.716,
+      "unit": "kg CO2 / kWh",
+      "source": "Central Electricity Authority (CEA), Ministry of Power, Govt. of India (CO2 Baseline Database v20.0)",
+      "reference_year": 2024,
+      "scope": "Scope 2 (Indirect emissions from purchased electricity)",
+      "description": "Weighted average emission factor of generation plants connected to the Indian National Grid."
+    },
+    "grid_regional_thermal": {
+      "name": "Thermal Dominant Grid Mix (Coal/Gas)",
+      "factor": 0.820,
+      "unit": "kg CO2 / kWh",
+      "source": "CEA India State & Regional Specific Thermal Generation Baseline",
+      "reference_year": 2023,
+      "scope": "Scope 2",
+      "description": "Higher-carbon regional grid segment dominated by sub-critical coal-fired thermal generation."
+    },
+    "solar_rooftop": {
+      "name": "Rooftop Solar PV (Self-Generated)",
+      "factor": 0.041,
+      "unit": "kg CO2e / kWh",
+      "source": "National Renewable Energy Laboratory (NREL) Lifecycle Assessment",
+      "reference_year": 2022,
+      "scope": "Lifecycle embodied emissions only (zero operational emissions)",
+      "description": "Embodied lifecycle manufacturing and recycling emissions of crystalline silicon solar panels."
+    }
+  },
+  "fuel": {
+    "lpg": {
+      "name": "LPG (Liquefied Petroleum Gas - Cooking Cylinder)",
+      "factor": 2.983,
+      "unit": "kg CO2e / kg",
+      "source": "IPCC 2006 Guidelines for National GHG Inventories / UK DESNZ 2023",
+      "reference_year": 2023,
+      "scope": "Scope 1 (Stationary combustion)",
+      "cylinder_size_kg": 14.2,
+      "cylinder_co2e_kg": 42.36,
+      "description": "Domestic cylinder LPG containing propane/butane mix commonly used in households and campus canteens."
+    },
+    "petrol_direct": {
+      "name": "Petrol / Motor Spirit (Direct Fuel)",
+      "factor": 2.310,
+      "unit": "kg CO2e / litre",
+      "source": "IPCC 2006 Guidelines for National GHG Inventories, Table 3.2.1",
+      "reference_year": 2023,
+      "scope": "Scope 1 (Direct mobile combustion)",
+      "description": "Direct chemical combustion of petrol in internal combustion engines."
+    },
+    "diesel_direct": {
+      "name": "Diesel / High Speed Diesel (Direct Fuel)",
+      "factor": 2.680,
+      "unit": "kg CO2e / litre",
+      "source": "IPCC 2006 Guidelines for National GHG Inventories, Table 3.2.1",
+      "reference_year": 2023,
+      "scope": "Scope 1 (Direct combustion)",
+      "description": "Direct combustion of diesel in generator sets, pumps, and heavy transport."
+    },
+    "cng": {
+      "name": "CNG (Compressed Natural Gas)",
+      "factor": 2.750,
+      "unit": "kg CO2e / kg",
+      "source": "UK DESNZ / DEFRA 2023 & IPCC Guidelines",
+      "reference_year": 2023,
+      "scope": "Scope 1 (Direct combustion)",
+      "description": "Natural gas compressed for vehicles and domestic piped supply."
+    },
+    "diesel_generator": {
+      "name": "Diesel Generator Power Backup (DG Set)",
+      "factor": 2.680,
+      "unit": "kg CO2e / litre",
+      "source": "Central Pollution Control Board (CPCB) DG Emission Standard / IPCC 2006",
+      "reference_year": 2023,
+      "scope": "Scope 1 (Stationary combustion)",
+      "description": "Diesel fuel consumed by on-site standby power generator sets during grid outages."
+    },
+    "furnace_oil": {
+      "name": "Furnace Oil / Heavy Fuel Oil (Boilers)",
+      "factor": 3.150,
+      "unit": "kg CO2e / litre",
+      "source": "Bureau of Energy Efficiency (BEE) Industrial Heat Baseline / IPCC 2006",
+      "reference_year": 2023,
+      "scope": "Scope 1 (Industrial process heat & boilers)",
+      "description": "Heavy petroleum fraction burned in industrial steam boilers, furnaces, and thermal plants."
+    },
+    "natural_gas_piped": {
+      "name": "Piped Natural Gas (PNG - Industrial)",
+      "factor": 2.020,
+      "unit": "kg CO2e / m3",
+      "source": "Petroleum and Natural Gas Regulatory Board (PNGRB) / DEFRA 2023",
+      "reference_year": 2023,
+      "scope": "Scope 1 (Stationary heating & industrial processing)",
+      "description": "Standard cubic metre of piped methane gas supplied via pipeline grid for industrial heating."
+    }
+  },
+  "waste": {
+    "mixed_landfill": {
+      "name": "Mixed Municipal Solid Waste (Landfilled / Dumpsite)",
+      "factor": 0.580,
+      "unit": "kg CO2e / kg",
+      "source": "IPCC Guidelines for Waste Management / DEFRA 2023",
+      "reference_year": 2023,
+      "scope": "Scope 3 (Waste disposal and methane fugitive release)",
+      "description": "Unsegregated garbage ending up in municipal open landfills where anaerobic decomposition yields methane."
+    },
+    "food_waste_landfill": {
+      "name": "Food / Organic Waste (Sent to Landfill)",
+      "factor": 0.620,
+      "unit": "kg CO2e / kg",
+      "source": "IPCC Guidelines & Waste and Resources Action Programme (WRAP)",
+      "reference_year": 2023,
+      "scope": "Scope 3",
+      "description": "Kitchen and canteen biodegradable food scraps decaying under anaerobic landfill conditions."
+    },
+    "composted_organic": {
+      "name": "Organic Waste Composted (Home / Campus Compost)",
+      "factor": 0.100,
+      "unit": "kg CO2e / kg",
+      "source": "IPCC Tier 1 Method for Biological Treatment of Waste",
+      "reference_year": 2023,
+      "scope": "Scope 3 (Biological treatment)",
+      "description": "Aerobic decomposition in well-aerated composters, preventing methane emissions."
+    },
+    "segregated_recyclables": {
+      "name": "Dry Recyclables (Paper, Plastics, Metals, Glass)",
+      "factor": 0.020,
+      "unit": "kg CO2e / kg",
+      "source": "DEFRA 2023 Waste Recycling Logistics Factor",
+      "reference_year": 2023,
+      "scope": "Scope 3 (Handling and transport to formal recycling stream)",
+      "description": "Segregated clean dry waste sent to material recovery facilities."
+    },
+    "industrial_scrap_metal": {
+      "name": "Industrial Scrap Metal (Recycled)",
+      "factor": 0.045,
+      "unit": "kg CO2e / kg",
+      "source": "International Aluminium Institute & World Steel Association LCA",
+      "reference_year": 2023,
+      "scope": "Scope 3 (Circular recovery logistics)",
+      "description": "Ferrous and non-ferrous metal scrap diverted from landfill to secondary smelting."
+    },
+    "hazardous_e_waste": {
+      "name": "Electronic Waste (E-Waste Recycled via SPCB Vendor)",
+      "factor": 0.120,
+      "unit": "kg CO2e / kg",
+      "source": "CPCB E-Waste Management Rules & DEFRA Circular Economy Factor",
+      "reference_year": 2023,
+      "scope": "Scope 3 (Controlled formal decommissioning)",
+      "description": "Decommissioned computers, batteries, circuit boards processed by authorized recyclers."
+    }
+  }
+}
