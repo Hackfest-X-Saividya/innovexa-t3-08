@@ -9,7 +9,7 @@ Green Pulse is a full-featured, beginner-friendly web application developed for 
 ---
 
 ## 📌 Problem Statement
-
+ ## CARBON FOOTPRINT TRACKING AND REDUCTION PLATFORM
 > *“Individuals, colleges, and organizations contribute to greenhouse gas emissions through transportation, electricity consumption, fuel usage, and waste generation. However, many lack a simple way to estimate their carbon footprint and identify opportunities to reduce emissions. Develop a digital platform that helps users estimate their carbon footprint, understand the main sources of emissions, and adopt more sustainable practices.”*
 
 Green Pulse solves this by closing the loop between carbon estimation, actionable reduction, photo verification, and behavioral rewards:
