@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-container" style="max-width: 1080px; margin: 0 auto; padding: 1.5rem 1rem;">
+
+  <!-- Page Header -->
+  <div style="background: white; border-radius: var(--radius-lg); padding: 1.5rem 2rem; margin-bottom: 2rem; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+        <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; background: #e0f2fe; color: #0284c7; padding: 2px 8px; border-radius: 9999px;">
+          Institutional Settings
+        </span>
+      </div>
+      <h2 style="font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0;">Organization Profile & Facilities</h2>
+      <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem; color: #64748b;">
+        Manage organization identity, sector classification, workforce size, and administrative parameters.
+      </p>
+    </div>
+    <div>
+      <a href="{{ url_for('org_dashboard') }}" class="btn btn-secondary btn-sm">
+        <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+      </a>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
+    <!-- Profile Edit Form -->
+    <div class="card" style="padding: 1.75rem; flex: 2;">
+      <h3 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-bottom: 1.25rem;">
+        <i class="fa-solid fa-building" style="color: #0284c7; margin-right: 0.4rem;"></i> Organization Details
+      </h3>
+
+      <form method="POST" action="{{ url_for('org_profile') }}">
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">
+            Organization Name *
+          </label>
+          <input type="text" name="org_name" class="form-control" value="{{ org.org_name }}" required style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+          <div>
+            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">
+              Organization Type *
+            </label>
+            <select name="org_type" class="form-control" style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+              <option value="College/University" {{ 'selected' if org.org_type == 'College/University' else '' }}>College / University</option>
+              <option value="Company" {{ 'selected' if org.org_type == 'Company' else '' }}>Company / Enterprise</option>
+              <option value="Office" {{ 'selected' if org.org_type == 'Office' else '' }}>Corporate Office</option>
+              <option value="Manufacturing Industry" {{ 'selected' if org.org_type == 'Manufacturing Industry' else '' }}>Manufacturing Industry</option>
+              <option value="Factory" {{ 'selected' if org.org_type == 'Factory' else '' }}>Factory / Processing Plant</option>
+              <option value="Other" {{ 'selected' if org.org_type == 'Other' else '' }}>Other Organization</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">
+              Industry Sector *
+            </label>
+            <input type="text" name="sector" class="form-control" value="{{ org.sector }}" required style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+          <div>
+            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">
+              Workforce / Student Count *
+            </label>
+            <input type="number" name="employee_count" class="form-control" value="{{ org.employee_count }}" required min="1" style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          </div>
+
+          <div>
+            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">
+              Number of Buildings / Sites *
+            </label>
+            <input type="number" name="building_count" class="form-control" value="{{ org.building_count }}" required min="1" style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          </div>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">
+            Headquarters / Operating Location *
+          </label>
+          <input type="text" name="location" class="form-control" value="{{ org.location }}" required style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+          <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">
+            Primary Reporting Period
+          </label>
+          <select name="reporting_period" class="form-control" style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <option value="monthly" {{ 'selected' if org.reporting_period == 'monthly' else '' }}>Monthly (Recommended)</option>
+            <option value="quarterly" {{ 'selected' if org.reporting_period == 'quarterly' else '' }}>Quarterly Reporting</option>
+            <option value="yearly" {{ 'selected' if org.reporting_period == 'yearly' else '' }}>Yearly / Annual Audit</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="padding: 0.6rem 1.5rem; font-weight: 700;">
+          <i class="fa-solid fa-floppy-disk"></i> Save Profile Changes
+        </button>
+      </form>
+    </div>
+
+    <!-- Administrator & Connected Entities Card -->
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+      <!-- Admin Card -->
+      <div class="card" style="padding: 1.5rem;">
+        <h4 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin-bottom: 0.75rem;">
+          <i class="fa-solid fa-user-shield" style="color: #0284c7; margin-right: 0.4rem;"></i> Authorized Administrator
+        </h4>
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+          <div style="width: 44px; height: 44px; border-radius: 50%; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+            <i class="fa-solid fa-user-tie"></i>
+          </div>
+          <div>
+            <div style="font-weight: 700; color: #0f172a;">{{ current_user.full_name }}</div>
+            <div style="font-size: 0.78rem; color: #64748b;">{{ current_user.email }}</div>
+          </div>
+        </div>
+        <div style="background: #f8fafc; border-radius: var(--radius-sm); padding: 0.75rem; font-size: 0.78rem; color: #475569; line-height: 1.4;">
+          <i class="fa-solid fa-lock"></i> Role: <strong>{{ current_user.role | upper }}</strong>. Authorized to submit utility bills, assign departmental targets, and redeem organizational grants.
+        </div>
+      </div>
+
+      <!-- Quick Links Card -->
+      <div class="card" style="padding: 1.5rem;">
+        <h4 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin-bottom: 0.75rem;">
+          <i class="fa-solid fa-sitemap" style="color: #10b981; margin-right: 0.4rem;"></i> Facilities & Structure
+        </h4>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
+          <span style="font-size: 0.85rem; color: #475569;">Active Departments</span>
+          <span style="font-size: 0.85rem; font-weight: 700; color: #0f172a;">{{ departments | length }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; margin-bottom: 1rem;">
+          <span style="font-size: 0.85rem; color: #475569;">Operating Sites / Facilities</span>
+          <span style="font-size: 0.85rem; font-weight: 700; color: #0f172a;">{{ sites | length }}</span>
+        </div>
+        <a href="{{ url_for('org_departments_sites') }}" class="btn btn-outline-primary btn-sm" style="display: block; text-align: center;">
+          <i class="fa-solid fa-gear"></i> Manage Departments & Sites
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

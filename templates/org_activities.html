@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-container" style="max-width: 1240px; margin: 0 auto; padding: 1.5rem 1rem;">
+
+  <!-- Header Banner -->
+  <div style="background: white; border-radius: var(--radius-lg); padding: 1.5rem 2rem; margin-bottom: 2rem; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+        <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; background: #e0f2fe; color: #0284c7; padding: 2px 8px; border-radius: 9999px;">
+          Scope 1 • Scope 2 • Scope 3
+        </span>
+      </div>
+      <h2 style="font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0;">Organizational Activity Data Entry</h2>
+      <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem; color: #64748b;">
+        Log organizational energy consumption, commercial fleet travel, employee commuting, waste streams, and industrial equipment usage.
+      </p>
+    </div>
+    <div>
+      <a href="{{ url_for('org_dashboard') }}" class="btn btn-secondary btn-sm">
+        <i class="fa-solid fa-arrow-left"></i> Back to Org Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Multi-Stream Data Entry Form Tabs -->
+  <div class="card" style="padding: 1.75rem; margin-bottom: 2rem;">
+    <h3 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-bottom: 1rem;">
+      <i class="fa-solid fa-pen-to-square" style="color: #0284c7; margin-right: 0.4rem;"></i> Record New Operational Activity
+    </h3>
+
+    <!-- Stream Selection Pills -->
+    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+      <button type="button" class="stream-pill active" onclick="switchStream('electricity')" id="pill-electricity" style="padding: 0.5rem 1rem; border-radius: var(--radius-md); font-weight: 600; font-size: 0.85rem; border: none; cursor: pointer; background: #0284c7; color: white;">
+        <i class="fa-solid fa-bolt"></i> Electricity & Power (Scope 2)
+      </button>
+      <button type="button" class="stream-pill" onclick="switchStream('fleet')" id="pill-fleet" style="padding: 0.5rem 1rem; border-radius: var(--radius-md); font-weight: 600; font-size: 0.85rem; border: 1px solid #cbd5e1; cursor: pointer; background: white; color: #475569;">
+        <i class="fa-solid fa-truck"></i> Company Fleet (Scope 1)
+      </button>
+      <button type="button" class="stream-pill" onclick="switchStream('commuting')" id="pill-commuting" style="padding: 0.5rem 1rem; border-radius: var(--radius-md); font-weight: 600; font-size: 0.85rem; border: 1px solid #cbd5e1; cursor: pointer; background: white; color: #475569;">
+        <i class="fa-solid fa-users"></i> Employee Commute (Scope 3)
+      </button>
+      <button type="button" class="stream-pill" onclick="switchStream('waste')" id="pill-waste" style="padding: 0.5rem 1rem; border-radius: var(--radius-md); font-weight: 600; font-size: 0.85rem; border: 1px solid #cbd5e1; cursor: pointer; background: white; color: #475569;">
+        <i class="fa-solid fa-trash-can"></i> Commercial Waste (Scope 3)
+      </button>
+      <button type="button" class="stream-pill" onclick="switchStream('industrial')" id="pill-industrial" style="padding: 0.5rem 1rem; border-radius: var(--radius-md); font-weight: 600; font-size: 0.85rem; border: 1px solid #cbd5e1; cursor: pointer; background: white; color: #475569;">
+        <i class="fa-solid fa-industry"></i> Industrial & Boilers (Scope 1)
+      </button>
+    </div>
+
+    <!-- Main Entry Form -->
+    <form method="POST" action="{{ url_for('org_activities') }}" id="orgActivityForm">
+      <input type="hidden" name="stream" id="activeStreamInput" value="electricity">
+
+      <!-- Common Metadata Row -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+        <div>
+          <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">Department Responsible</label>
+          <select name="department_id" class="form-control" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <option value="">Campus / Facility Wide</option>
+            {% for d in departments %}
+              <option value="{{ d.id }}">{{ d.name }} (Head: {{ d.head_name or 'N/A' }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">Operating Site / Facility</label>
+          <select name="site_id" class="form-control" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <option value="">Main Campus / Primary Plant</option>
+            {% for s in sites %}
+              <option value="{{ s.id }}">{{ s.site_name }} ({{ s.site_type }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">Reporting Period</label>
+          <select name="reporting_period" class="form-control" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <option value="monthly" selected>Monthly Reporting</option>
+            <option value="quarterly">Quarterly Reporting</option>
+            <option value="yearly">Annual Audit (FY 2025-26)</option>
+          </select>
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">Record Date</label>
+          <input type="date" name="record_date" class="form-control" value="2026-10-28" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+        </div>
+      </div>
+
+      <!-- STREAM 1: ELECTRICITY & PURCHASED ENERGY (Scope 2) -->
+      <div id="section-electricity" class="stream-section">
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.25rem;">
+          <h4 style="font-size: 0.95rem; font-weight: 700; color: #0284c7; margin-bottom: 0.75rem;">
+            <i class="fa-solid fa-bolt"></i> Scope 2: Purchased Electricity & Power
+          </h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <div>
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">Electricity Consumption (kWh) *</label>
+              <input type="number" step="0.1" name="kwh" class="form-control" placeholder="e.g. 18500" value="15000" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            </div>
+            <div>
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">Power Grid Factor Source</label>
+              <select name="grid_mix" class="form-control" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                <option value="grid_national" selected>National Grid Mix (0.716 kg CO2/kWh — CEA India v20.0)</option>
+                <option value="green_tariff">Green / Renewable PPA Tariff (0.000 kg CO2/kWh)</option>
+              </select>
+            </div>
+            <div>
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">Electricity Tariff (₹ / kWh)</label>
+              <input type="number" step="0.01" name="tariff_inr" class="form-control" value="8.20" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            </div>
+            <div>
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">Total Electricity Bill (₹)</label>
+              <input type="number" step="0.01" name="cost_inr" class="form-control" placeholder="e.g. 123000" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STREAM 2: COMPANY FLEET (Scope 1) -->
+      <div id="section-fleet" class="stream-section" style="display: none;">
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.25rem;">
+          <h4 style="font-size: 0.95rem; font-weight: 700; color: #f59e0b; margin-bottom: 0.75rem;">
+            <i class="fa-solid fa-truck"></i> Scope 1: Company Vehicles & Internal Fleet
+          </h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <div>
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">Vehicle Category</label>
+              <select name="vehicle_type" class="form-control" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                <option value="commercial_van" selected>Commercial Delivery Van (0.245 kg CO2e/km)</option>
+                <option value="freight_truck">Heavy Freight Truck (0.892 kg CO2e/km)</option>
+                <option value="shuttle_bus">Employee Shuttle Bus (0.612 kg CO2e/km)</option>
+                <option value="car_petrol">Company Executive Car (0.165 kg CO2e/km)</option>
+              </select>
+            </div>
+            <div>
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">Fuel Type</label>
+              <select name="fuel_type" class="form-control" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                <option value="diesel" selected>Diesel (Commercial Standard)</option>
+                <option value="petrol">Petrol / Gasoline</option>
+                <option value="cng">Compressed Natural Gas (CNG)</option>
+                <option value="electric">Battery Electric Fleet</option>
+              </select>
+            </div>
+            <div>
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">Distance Travelled (km)</label>
+              <input type="number" step="0.1" name="distance_km" class="form-control" placeholder="e.g. 2400" value="1200" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            </div>
+            <div>
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">Fuel Dispensed (Liters, optional)</label>
+              <input type="number" step="0.1" name="liters" class="form-control" placeholder="e.g. 180" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STREAM 3: EMPLOYEE COMMUTING (Scope 3) -->
+      <div id="section-commuting" class="stream-section" style="display: none;">
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.25rem;">
+          <h4 style="font-size: 0.95rem; font-weight: 700; color: #8b5cf6; margin-bottom: 0.75rem;">
+            <i class="fa-solid fa-users"></i> Scope 3 (Cat 7): Aggregated Employee Commuting
+          </h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <div>
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">Commute Transit Mode</label>
+              <select name="mode_key" class="form-control" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                <option value="bus" selected>Municipal City Bus (0.054 kg CO2e/passenger-km)</option>
+                <option value="metro">Electric Metro Rail (0.016 kg CO2e/passenger-km)</option>
+                <option value="car_petrol">Carpooling / Shared Personal Vehicle (0.165 kg/km)</option>
+                <option value="motorcycle">Two-Wheeler Motorcycle / Scooter (0.084 kg/km)</option>
+              </select>
+            </div>
+            <div>
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">Number of Commuter Journeys</label>
+              <input type="number" name="journeys_count" class="form-control" value="450" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            </div>
+            <div>
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">Average One-Way Distance (km)</label>
+              <input type="number" step="0.1" name="avg_distance_km" class="form-control" value="14.0" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            </div>
+            <div>
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">Total Passenger-km (or calculated)</label>
+              <input type="number" step="0.1" name="total_passenger_km" class="form-control" placeholder="Auto-calculated (450 × 14 = 6,300)" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STREAM 4: COMMERCIAL WASTE (Scope 3) -->
+      <div id="section-waste" class="stream-section" style="display: none;">
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.25rem;">
+          <h4 style="font-size: 0.95rem; font-weight: 700; color: #10b981; margin-bottom: 0.75rem;">
+            <i class="fa-solid fa-trash-can"></i> Scope 3 (Cat 5): Commercial Waste Disposal & Recycling
+          </h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <div>
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">Waste Stream & Treatment</label>
+              <select name="waste_key" class="form-control" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                <option value="mixed_commercial" selected>Commercial Mixed Solid Waste to Landfill (0.580 kg CO2e/kg)</option>
+                <option value="composted_organic">Cafeteria Organic Waste Composted (-0.100 kg CO2e/kg)</option>
+                <option value="recycled_paper">Office Paper & Cardboard Recycled (0.050 kg CO2e/kg)</option>
+                <option value="scrap_metal">Industrial Scrap Metal Diverted (0.045 kg CO2e/kg)</option>
+                <option value="hazardous_ewaste">Institutional E-Waste Authorized Recycler (0.120 kg CO2e/kg)</option>
+              </select>
+            </div>
+            <div>
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">Quantity in Kilograms (kg)</label>
+              <input type="number" step="0.1" name="quantity_kg" class="form-control" value="850" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            </div>
+            <div>
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">Quantity in Tonnes (optional)</label>
+              <input type="number" step="0.001" name="quantity_tonnes" class="form-control" placeholder="e.g. 0.85" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            </div>
+            <div>
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">Weighbridge / Manifest Ref</label>
+              <input type="text" name="evidence_ref" class="form-control" placeholder="e.g. BBMP-WB-88421" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STREAM 5: INDUSTRIAL & BOILERS (Scope 1) -->
+      <div id="section-industrial" class="stream-section" style="display: none;">
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.25rem;">
+          <h4 style="font-size: 0.95rem; font-weight: 700; color: #6366f1; margin-bottom: 0.75rem;">
+            <i class="fa-solid fa-industry"></i> Scope 1: Stationary Combustion & Industrial Operations
+          </h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <div>
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">Fuel or Equipment Type</label>
+              <select name="fuel_type" class="form-control" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                <option value="diesel_generator" selected>Backup Diesel Generator (2.680 kg CO2e / L — BEE Standard)</option>
+                <option value="furnace_oil">Boiler Furnace Oil (3.120 kg CO2e / L)</option>
+                <option value="piped_gas">Piped Natural Gas / PNG (1.980 kg CO2e / SCM)</option>
+              </select>
+            </div>
+            <div>
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">Quantity Consumed (Liters or SCM)</label>
+              <input type="number" step="0.1" name="quantity" class="form-control" value="250" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            </div>
+            <div>
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">Production Output Units (if manufacturing)</label>
+              <input type="number" step="1" name="production_units" class="form-control" placeholder="e.g. 500 units" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            </div>
+            <div>
+              <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">Fuel Purchase Cost (₹)</label>
+              <input type="number" step="0.01" name="cost_inr" class="form-control" placeholder="e.g. 23500" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- General Notes & Submit Button -->
+      <div style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 250px;">
+          <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #334155; margin-bottom: 0.25rem;">Operational Notes / Meter References</label>
+          <input type="text" name="notes" class="form-control" placeholder="e.g. Sub-meter billing verification for engineering block." style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+        </div>
+        <div>
+          <button type="submit" class="btn btn-primary" style="padding: 0.6rem 1.5rem; font-weight: 700;">
+            <i class="fa-solid fa-calculator"></i> Calculate & Save Record
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Historical Organization Activity Records Table -->
+  <div class="card" style="padding: 1.75rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+      <div>
+        <h3 style="margin: 0; font-size: 1.2rem; font-weight: 700; color: #0f172a;">
+          <i class="fa-solid fa-list-check" style="color: #0284c7; margin-right: 0.4rem;"></i> Historical Organizational Records
+        </h3>
+        <p style="margin: 0.2rem 0 0 0; font-size: 0.85rem; color: #64748b;">
+          Showing all logged activity streams for <strong>{{ org.org_name }}</strong>.
+        </p>
+      </div>
+
+      <!-- Filter by period -->
+      <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <span style="font-size: 0.78rem; color: #64748b;">Filter:</span>
+        <a href="{{ url_for('org_activities') }}" class="btn btn-sm" style="background: {{ '#0284c7' if not period_filter else '#f1f5f9' }}; color: {{ 'white' if not period_filter else '#475569' }}; font-size: 0.75rem;">All</a>
+        <a href="{{ url_for('org_activities', period='monthly') }}" class="btn btn-sm" style="background: {{ '#0284c7' if period_filter == 'monthly' else '#f1f5f9' }}; color: {{ 'white' if period_filter == 'monthly' else '#475569' }}; font-size: 0.75rem;">Monthly</a>
+        <a href="{{ url_for('org_activities', period='quarterly') }}" class="btn btn-sm" style="background: {{ '#0284c7' if period_filter == 'quarterly' else '#f1f5f9' }}; color: {{ 'white' if period_filter == 'quarterly' else '#475569' }}; font-size: 0.75rem;">Quarterly</a>
+      </div>
+    </div>
+
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+        <thead>
+          <tr style="background: #f8fafc; border-bottom: 2px solid var(--border-color); text-align: left;">
+            <th style="padding: 0.75rem 1rem;">Scope</th>
+            <th style="padding: 0.75rem 1rem;">Date & Period</th>
+            <th style="padding: 0.75rem 1rem;">Category</th>
+            <th style="padding: 0.75rem 1rem;">Activity Description</th>
+            <th style="padding: 0.75rem 1rem;">Department / Site</th>
+            <th style="padding: 0.75rem 1rem; text-align: right;">Activity Input</th>
+            <th style="padding: 0.75rem 1rem; text-align: right;">Calculated CO2e</th>
+            <th style="padding: 0.75rem 1rem; text-align: right;">Cost (INR)</th>
+            <th style="padding: 0.75rem 1rem; text-align: center;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in activity_records %}
+            <tr style="border-bottom: 1px solid var(--border-color);">
+              <td style="padding: 0.75rem 1rem;">
+                <span style="font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 9999px; background: {{ '#fef3c7; color: #b45309;' if 'scope 1' in r.scope.lower() else ('#e0f2fe; color: #0369a1;' if 'scope 2' in r.scope.lower() else '#f3e8ff; color: #7e22ce;') }}">
+                  {{ r.scope.split('(')[0].strip() }}
+                </span>
+              </td>
+              <td style="padding: 0.75rem 1rem; color: #64748b;">
+                <div>{{ r.record_date }}</div>
+                <div style="font-size: 0.72rem; text-transform: uppercase;">{{ r.reporting_period }}</div>
+              </td>
+              <td style="padding: 0.75rem 1rem; text-transform: capitalize; font-weight: 600; color: #0f172a;">
+                {{ r.category }}
+              </td>
+              <td style="padding: 0.75rem 1rem;">
+                <div style="font-weight: 600; color: #0f172a;">{{ r.activity_name }}</div>
+                {% if r.notes %}
+                  <div style="font-size: 0.75rem; color: #64748b;">{{ r.notes }}</div>
+                {% endif %}
+              </td>
+              <td style="padding: 0.75rem 1rem; color: #475569;">
+                <div>{{ r.department_name or 'Facility Wide' }}</div>
+                <div style="font-size: 0.75rem; color: #94a3b8;">{{ r.site_name or 'Main Site' }}</div>
+              </td>
+              <td style="padding: 0.75rem 1rem; text-align: right; font-weight: 600;">
+                {{ r.input_value }} {{ r.input_unit }}
+              </td>
+              <td style="padding: 0.75rem 1rem; text-align: right;">
+                <div style="font-weight: 700; color: #0f172a;">{{ (r.emissions_kg_co2e / 1000.0) | round(3) }} t</div>
+                <div style="font-size: 0.72rem; color: #64748b;">{{ r.emissions_kg_co2e | round(1) }} kg</div>
+              </td>
+              <td style="padding: 0.75rem 1rem; text-align: right; color: #64748b;">
+                {% if r.cost_inr and r.cost_inr > 0 %}
+                  ₹{{ "{:,.2f}".format(r.cost_inr) }}
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+              <td style="padding: 0.75rem 1rem; text-align: center;">
+                <form method="POST" action="{{ url_for('delete_org_activity_route', record_id=r.id) }}" onsubmit="return confirm('Delete this activity record?');" style="display: inline;">
+                  <button type="submit" class="btn btn-sm" style="background: none; border: none; color: #ef4444; cursor: pointer;" title="Delete Record">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Multi-Stream Tab Script -->
+<script>
+function switchStream(streamName) {
+  document.getElementById("activeStreamInput").value = streamName;
+
+  // Update tabs visual state
+  const streams = ['electricity', 'fleet', 'commuting', 'waste', 'industrial'];
+  streams.forEach(s => {
+    const pill = document.getElementById("pill-" + s);
+    const sec = document.getElementById("section-" + s);
+    if (s === streamName) {
+      pill.style.background = "#0284c7";
+      pill.style.color = "white";
+      pill.style.border = "none";
+      if (sec) sec.style.display = "block";
+    } else {
+      pill.style.background = "white";
+      pill.style.color = "#475569";
+      pill.style.border = "1px solid #cbd5e1";
+      if (sec) sec.style.display = "none";
+    }
+  });
+}
+</script>
+{% endblock %}

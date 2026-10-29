@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Submit Action Evidence</h1>
+    <p class="page-subtitle">Upload verifiable photo documentation (bus ticket, electricity meter, segregated bins) for reviewer assessment</p>
+  </div>
+  <div>
+    <a href="{{ url_for('challenges') }}" class="btn btn-secondary">
+      <i class="fa-solid fa-arrow-left"></i> Browse Challenges
+    </a>
+  </div>
+</div>
+
+<div class="grid-2">
+  <!-- Upload Form -->
+  <div class="card">
+    <h2 class="card-title">
+      <i class="fa-solid fa-cloud-arrow-up" style="color: var(--primary);"></i> Upload Verification Proof
+    </h2>
+
+    <form action="{{ url_for('evidence_upload') }}" method="POST" enctype="multipart/form-data">
+      
+      <!-- Challenge Dropdown -->
+      <div class="form-group">
+        <label class="form-label" for="challenge_id">Select Completed Challenge *</label>
+        <select class="form-select" id="challenge_id" name="challenge_id" required>
+          <option value="" disabled {% if not preselect_cid %}selected{% endif %}>-- Choose an enrolled challenge --</option>
+          {% for ch in available_challenges %}
+            <option value="{{ ch.id }}" {% if preselect_cid == ch.id %}selected{% endif %}>
+              [{{ ch.category | upper }}] {{ ch.title }} (+{{ ch.reward_points }} pts)
+            </option>
+          {% endfor %}
+        </select>
+        <div class="form-help">Only approved submissions award points according to the Green Pulse points policy.</div>
+      </div>
+
+      <!-- Submission Date -->
+      <div class="form-group">
+        <label class="form-label" for="submission_date">Action Date *</label>
+        <input type="date" class="form-control" id="submission_date" name="submission_date" value="2026-10-28" required>
+      </div>
+
+      <!-- File Upload Input -->
+      <div class="form-group">
+        <label class="form-label" for="evidence_file">Photo Evidence File * (PNG, JPG, JPEG, WEBP, max 5MB)</label>
+        <input type="file" class="form-control" id="evidence_file" name="evidence_file" accept=".png,.jpg,.jpeg,.webp" required>
+        <div class="form-help">e.g. Bus ticket showing date/route, submeter reading, or photo of home dual waste bins in use.</div>
+      </div>
+
+      <!-- Live Client-Side Image Preview -->
+      <div id="imagePreviewContainer" style="display: none; margin-bottom: 1.25rem;">
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.4rem;">
+          <i class="fa-solid fa-image"></i> Selected Evidence Preview:
+        </div>
+        <div style="border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; max-height: 240px; text-align: center; background: #000;">
+          <img id="imagePreview" src="" alt="Evidence Preview" style="max-height: 240px; width: auto; max-width: 100%; object-fit: contain;">
+        </div>
+      </div>
+
+      <!-- Notes / Description -->
+      <div class="form-group">
+        <label class="form-label" for="notes">Notes / Observations for Reviewer</label>
+        <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Describe the action taken (e.g., 'Took the 335E city bus from home to campus instead of my motorcycle; bus ticket attached with route details')"></textarea>
+      </div>
+
+      <div style="background: #fafafa; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.75rem; margin-bottom: 1.25rem; font-size: 0.78rem; color: var(--text-muted);">
+        <i class="fa-solid fa-shield"></i> <strong>Verification Note:</strong>
+        Photos are reviewed by the campus sustainability cell. Points are credited only upon reviewer verification. Duplicate submissions for the same action are blocked.
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%;">
+        <i class="fa-solid fa-paper-plane"></i> Submit Evidence for Verification
+      </button>
+    </form>
+  </div>
+
+  <!-- Submission History & Status -->
+  <div class="card">
+    <h2 class="card-title">
+      <i class="fa-solid fa-list-check" style="color: var(--secondary);"></i> My Submission History
+    </h2>
+
+    {% if submissions_history %}
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        {% for sub in submissions_history %}
+          <div style="border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; background: #ffffff;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+              <div>
+                <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main);">
+                  {{ sub.challenge_title }}
+                </h4>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">
+                  Submitted on {{ sub.submission_date }} &bull; File: {{ sub.file_name }}
+                </div>
+              </div>
+              <span class="badge badge-{{ sub.status }}">
+                {{ sub.status | capitalize }}
+              </span>
+            </div>
+
+            {% if sub.notes %}
+              <div style="font-size: 0.82rem; color: #475569; background: #f8fafc; padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); margin: 0.5rem 0;">
+                "{{ sub.notes }}"
+              </div>
+            {% endif %}
+
+            <!-- Thumbnail & Reviewer Feedback -->
+            <div style="display: flex; gap: 1rem; align-items: center; margin-top: 0.75rem; border-top: 1px dashed var(--border-color); padding-top: 0.75rem;">
+              <a href="{{ url_for('serve_upload', filename=sub.file_name) }}" target="_blank" title="Click to view full photo">
+                <img src="{{ url_for('serve_upload', filename=sub.file_name) }}" alt="Proof" style="width: 60px; height: 60px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+              </a>
+              <div style="font-size: 0.8rem; flex: 1;">
+                {% if sub.status == 'approved' %}
+                  <div style="color: #059669; font-weight: 700;">
+                    <i class="fa-solid fa-circle-check"></i> Approved (+{{ sub.points_awarded }} Points Credited)
+                  </div>
+                  <div style="color: var(--text-muted); font-size: 0.75rem;">
+                    Feedback: {{ sub.reviewer_notes or 'Verified authentic evidence.' }}
+                  </div>
+                {% elif sub.status == 'rejected' %}
+                  <div style="color: #dc2626; font-weight: 700;">
+                    <i class="fa-solid fa-circle-xmark"></i> Rejected
+                  </div>
+                  <div style="color: var(--text-muted); font-size: 0.75rem;">
+                    Feedback: {{ sub.reviewer_notes or 'Evidence was unclear or incomplete.' }}
+                  </div>
+                {% else %}
+                  <div style="color: #b45309; font-weight: 600;">
+                    <i class="fa-solid fa-hourglass-start"></i> Pending Review
+                  </div>
+                  <div style="color: var(--text-muted); font-size: 0.75rem;">
+                    Under inspection by Dr. Priya Rao. Eligible for +{{ sub.reward_points }} points upon approval.
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="text-align: center; color: var(--text-muted); padding: 3rem 1rem;">
+        <i class="fa-solid fa-images" style="font-size: 2.5rem; color: #cbd5e1; margin-bottom: 0.75rem;"></i>
+        <p style="font-size: 0.9rem;">No evidence submissions yet.</p>
+        <p style="font-size: 0.8rem;">Select a challenge on the left to upload your first proof of sustainable action!</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

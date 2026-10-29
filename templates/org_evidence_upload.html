@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-container" style="max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem;">
+
+  <!-- Header Banner -->
+  <div style="background: white; border-radius: var(--radius-lg); padding: 1.5rem 2rem; margin-bottom: 2rem; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+        <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; background: #e0f2fe; color: #0284c7; padding: 2px 8px; border-radius: 9999px;">
+          Institutional ESG Audit Trail
+        </span>
+      </div>
+      <h2 style="font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0;">Upload Institutional Proof & Evidence</h2>
+      <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem; color: #64748b;">
+        Upload utility bills, fuel invoices, weighbridge slips, or telemetry photos for automated AI optical verification.
+      </p>
+    </div>
+    <div>
+      <a href="{{ url_for('org_evidence_review') }}" class="btn btn-secondary btn-sm">
+        <i class="fa-solid fa-stamp"></i> Review Console
+      </a>
+    </div>
+  </div>
+
+  <div class="card" style="padding: 2rem; margin-bottom: 2rem;">
+    <form method="POST" action="{{ url_for('org_evidence_upload') }}" enctype="multipart/form-data">
+      
+      <!-- Challenge Link -->
+      <div style="margin-bottom: 1.25rem;">
+        <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">
+          Target Challenge / Initiative
+        </label>
+        <select name="challenge_id" class="form-control" style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          <option value="">General Facility Verification / Activity Proof</option>
+          {% for ch in challenges %}
+            <option value="{{ ch.id }}" {{ 'selected' if request.args.get('challenge_id') | int == ch.id else '' }}>
+              {{ ch.title }} (+{{ ch.reward_points }} pts) — Due: {{ ch.expected_completion_date }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- File Picker -->
+      <div style="margin-bottom: 1.25rem;">
+        <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">
+          Official Evidence Document (Image / Receipt) *
+        </label>
+        <input type="file" name="evidence_file" class="form-control" required accept=".png,.jpg,.jpeg,.webp" style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+        <span style="font-size: 0.75rem; color: #64748b; margin-top: 0.25rem; display: block;">
+          Supported formats: PNG, JPG, JPEG, WEBP (Max size: 5MB). Optical AI scans for official stamps, invoice numbers, and consumption units.
+        </span>
+      </div>
+
+      <!-- Notes Field -->
+      <div style="margin-bottom: 1.5rem;">
+        <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">
+          Submission Notes / Document Reference
+        </label>
+        <textarea name="notes" rows="3" class="form-control" placeholder="e.g. BESCOM LT-2 Tariff Electricity bill for October 2026. Substation meter #402." style="width: 100%; padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);"></textarea>
+      </div>
+
+      <!-- Guidelines Box -->
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.5rem; font-size: 0.82rem; color: #475569;">
+        <strong style="color: #0f172a; display: block; margin-bottom: 0.35rem;">
+          <i class="fa-solid fa-circle-info" style="color: #0284c7;"></i> Guidelines for Valid Institutional Evidence:
+        </strong>
+        <ul style="padding-left: 1.25rem; line-height: 1.5;">
+          <li>Must clearly display the date, institutional consumer number, and measured units (kWh, Liters, kg, tonnes).</li>
+          <li>Digital PDF screenshots or sharp camera photographs of physical receipts are acceptable.</li>
+          <li>AI Vision Engine performs automated feature classification to verify document authenticity within seconds.</li>
+        </ul>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem; font-weight: 700; width: 100%;">
+        <i class="fa-solid fa-cloud-arrow-up"></i> Upload Document & Run AI Optical Verification
+      </button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

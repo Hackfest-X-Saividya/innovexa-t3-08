@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Reviewer Verification Portal</h1>
+    <p class="page-subtitle">Inspect submitted photo documentation, verify eligible actions, and award Green Pulse points</p>
+  </div>
+  <div style="display: flex; align-items: center; gap: 0.75rem;">
+    <span class="badge" style="background: #fef3c7; color: #92400e; padding: 0.4rem 0.8rem; font-size: 0.82rem;">
+      <i class="fa-solid fa-user-shield"></i> Reviewer: Dr. Priya Rao
+    </span>
+  </div>
+</div>
+
+<!-- Reviewer Guidance Banner -->
+<div class="card" style="margin-bottom: 1.75rem; background: #fafbfc; border-color: var(--border-color);">
+  <div style="display: flex; align-items: center; gap: 1rem;">
+    <div style="width: 44px; height: 44px; border-radius: var(--radius-md); background: #dbeafe; color: #1d4ed8; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+      <i class="fa-solid fa-shield-halved"></i>
+    </div>
+    <div style="font-size: 0.85rem; color: #334155; line-height: 1.5;">
+      <strong>Reviewer Protocol:</strong> Inspect uploaded images to ensure tickets or meter readings show valid dates, matching locations, and plausible readings.
+      Points are awarded immediately upon approval and locked against duplicate rewards.
+    </div>
+  </div>
+</div>
+
+<!-- Submissions Queue -->
+{% if submissions %}
+  <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+    {% for sub in submissions %}
+      <div class="card" style="border-left: 5px solid {{ '#f59e0b' if sub.status == 'pending' else ('#10b981' if sub.status == 'approved' else '#ef4444') }};">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
+          <div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">
+              Submission #{{ sub.id }} &bull; Category: {{ sub.category }}
+            </div>
+            <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin-top: 0.15rem;">
+              {{ sub.challenge_title }}
+            </h3>
+            <div style="font-size: 0.85rem; color: var(--text-muted);">
+              Submitted by: <strong>{{ sub.user_name }}</strong> ({{ sub.user_email }}) on <strong>{{ sub.submission_date }}</strong>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <span class="badge" style="background: #fef3c7; color: #b45309; font-size: 0.85rem; padding: 0.35rem 0.65rem;">
+              <i class="fa-solid fa-award"></i> Reward: +{{ sub.reward_points }} Points
+            </span>
+            <span class="badge badge-{{ sub.status }}">
+              {{ sub.status | capitalize }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Evidence Inspection Layout -->
+        <div style="display: grid; grid-template-columns: 240px 1fr; gap: 1.5rem; margin-bottom: 1.25rem;">
+          <!-- Photo Thumbnail / Preview -->
+          <div style="background: #0f172a; border-radius: var(--radius-md); overflow: hidden; display: flex; align-items: center; justify-content: center; min-height: 180px; max-height: 220px; border: 1px solid var(--border-color);">
+            <a href="{{ url_for('serve_upload', filename=sub.file_name) }}" target="_blank" title="Click to view full image in new tab">
+              <img src="{{ url_for('serve_upload', filename=sub.file_name) }}" alt="Submitted Proof" style="max-height: 220px; width: 100%; object-fit: contain;">
+            </a>
+          </div>
+
+          <!-- Submission Details & User Note -->
+          <div style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.35rem;">
+                <i class="fa-solid fa-id-badge"></i> Expected Proof: <span style="font-weight: 500; color: #0284c7;">{{ sub.evidence_type }}</span>
+              </div>
+              <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                <strong>Challenge Guideline:</strong> {{ sub.instructions }}
+              </div>
+
+              <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.75rem; font-size: 0.85rem; color: #334155;">
+                <strong><i class="fa-solid fa-comment-dots"></i> Student's Note:</strong><br>
+                {{ sub.notes or 'No additional notes provided by user.' }}
+              </div>
+            </div>
+
+            <!-- Existing Reviewer Assessment Info (if reviewed) -->
+            {% if sub.status != 'pending' %}
+              <div style="margin-top: 0.75rem; font-size: 0.82rem; padding: 0.6rem 0.85rem; border-radius: var(--radius-sm); background: {{ '#ecfdf5' if sub.status == 'approved' else '#fef2f2' }}; color: {{ '#065f46' if sub.status == 'approved' else '#991b1b' }};">
+                <strong>Review Outcome:</strong> {{ sub.status | upper }} on {{ sub.reviewed_at }}<br>
+                <span>Feedback: {{ sub.reviewer_notes }}</span>
+                {% if sub.status == 'approved' %}
+                  <div><strong>Points Credited:</strong> +{{ sub.points_awarded }} Points to user balance</div>
+                {% endif %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Approval Action Bar (Only active for Pending submissions) -->
+        {% if sub.status == 'pending' %}
+          <div style="border-top: 1px solid var(--border-color); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; background: #fafbfc; margin: 0 -1.5rem -1.5rem; padding: 1rem 1.5rem; border-bottom-left-radius: var(--radius-lg); border-bottom-right-radius: var(--radius-lg);">
+            
+            <div style="flex: 1; min-width: 280px;">
+              <input type="text" id="note_input_{{ sub.id }}" class="form-control" placeholder="Optional feedback note for user (e.g., 'Valid bus ticket verified')" value="Verified authentic evidence.">
+            </div>
+
+            <div style="display: flex; gap: 0.75rem;">
+              <!-- Reject Form -->
+              <form action="{{ url_for('reject_evidence', submission_id=sub.id) }}" method="POST" onsubmit="this.reviewer_notes.value = document.getElementById('note_input_{{ sub.id }}').value;">
+                <input type="hidden" name="reviewer_notes" value="">
+                <button type="submit" class="btn btn-sm btn-danger">
+                  <i class="fa-solid fa-times-circle"></i> Reject Proof
+                </button>
+              </form>
+
+              <!-- Approve Form -->
+              <form action="{{ url_for('approve_evidence', submission_id=sub.id) }}" method="POST" onsubmit="this.reviewer_notes.value = document.getElementById('note_input_{{ sub.id }}').value;">
+                <input type="hidden" name="reviewer_notes" value="">
+                <button type="submit" class="btn btn-sm btn-success">
+                  <i class="fa-solid fa-check-circle"></i> Approve & Award +{{ sub.reward_points }} Pts
+                </button>
+              </form>
+            </div>
+          </div>
+        {% endif %}
+
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="card" style="text-align: center; color: var(--text-muted); padding: 4rem 1rem;">
+    <i class="fa-solid fa-inbox" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
+    <h3 style="font-size: 1.2rem; color: var(--text-main); margin-bottom: 0.5rem;">Review Queue Empty</h3>
+    <p style="font-size: 0.88rem; max-width: 400px; margin: 0 auto;">
+      All submitted evidence items have been verified. When a user submits proof for an enrolled challenge, it will appear here for inspection.
+    </p>
+  </div>
+{% endif %}
+{% endblock %}

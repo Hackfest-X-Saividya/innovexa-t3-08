@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Before-and-After Carbon Simulator</h1>
+    <p class="page-subtitle">Model hypothetical sustainable interventions and preview estimated carbon reductions and financial savings</p>
+  </div>
+  <div>
+    <span class="badge" style="background: #e0f2fe; color: #0369a1; padding: 0.4rem 0.8rem; font-size: 0.82rem;">
+      <i class="fa-solid fa-flask"></i> Interactive What-If Scenario Tool
+    </span>
+  </div>
+</div>
+
+<!-- Simulation Type Selector Tabs -->
+<div style="display: flex; gap: 0.75rem; margin-bottom: 1.5rem;">
+  <a href="{{ url_for('simulator', type='transportation') }}" class="btn {{ 'btn-primary' if sim_type == 'transportation' else 'btn-secondary' }}">
+    <i class="fa-solid fa-bus"></i> Transportation Simulator
+  </a>
+  <a href="{{ url_for('simulator', type='electricity') }}" class="btn {{ 'btn-primary' if sim_type == 'electricity' else 'btn-secondary' }}">
+    <i class="fa-solid fa-bolt"></i> Electricity Savings Simulator
+  </a>
+  <a href="{{ url_for('simulator', type='waste') }}" class="btn {{ 'btn-primary' if sim_type == 'waste' else 'btn-secondary' }}">
+    <i class="fa-solid fa-recycle"></i> Waste Diversion Simulator
+  </a>
+</div>
+
+<div class="grid-2">
+  <!-- Simulator Input Card -->
+  <div class="card">
+    <h2 class="card-title">
+      <i class="fa-solid fa-sliders" style="color: var(--primary);"></i> Configure Simulation Parameters
+    </h2>
+
+    <form action="{{ url_for('simulator') }}" method="POST">
+      <input type="hidden" name="sim_type" value="{{ sim_type }}">
+
+      {% if sim_type == 'transportation' %}
+        <div style="background: var(--border-subtle); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.25rem;">
+          <h4 style="font-size: 0.9rem; margin-bottom: 0.75rem; color: #1e293b;">1. Baseline Commute (Current Activity)</h4>
+          <div class="form-group">
+            <label class="form-label" for="b_mode">Current Vehicle / Mode</label>
+            <select class="form-select" id="b_mode" name="b_mode">
+              <option value="motorcycle" selected>Motorcycle / Scooter (0.084 kg CO2e/km)</option>
+              <option value="petrol_car">Petrol Car - Average (0.170 kg CO2e/km)</option>
+              <option value="diesel_car">Diesel Car - Average (0.171 kg CO2e/km)</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="b_dist">Commute Distance (km)</label>
+            <input type="number" step="0.5" min="1" class="form-control" id="b_dist" name="b_dist" value="15">
+          </div>
+        </div>
+
+        <div style="background: var(--primary-light); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.25rem; border: 1px solid var(--primary-border);">
+          <h4 style="font-size: 0.9rem; margin-bottom: 0.75rem; color: var(--primary-dark);">2. Proposed Sustainable Alternative</h4>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="p_mode">Alternative Transit Mode</label>
+            <select class="form-select" id="p_mode" name="p_mode">
+              <option value="bus" selected>Public Transit Bus (0.054 kg CO2e/p-km - 40 pass.)</option>
+              <option value="metro_rail">Metro Rail / Electric Train (0.035 kg CO2e/p-km)</option>
+              <option value="electric_car">Electric Vehicle (0.053 kg CO2e/km)</option>
+              <option value="bicycle_walk">Bicycle / Walking (0.000 kg CO2e/km - Active)</option>
+            </select>
+          </div>
+        </div>
+
+      {% elif sim_type == 'electricity' %}
+        <div style="background: var(--border-subtle); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.25rem;">
+          <h4 style="font-size: 0.9rem; margin-bottom: 0.75rem; color: #1e293b;">1. Baseline Electricity Consumption</h4>
+          <div class="form-group">
+            <label class="form-label" for="b_kwh">Current Monthly Consumption (kWh)</label>
+            <input type="number" step="1" min="1" class="form-control" id="b_kwh" name="b_kwh" value="250">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="tariff">Electricity Tariff (₹ INR / kWh)</label>
+            <input type="number" step="0.5" min="1" class="form-control" id="tariff" name="tariff" value="7.00">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="grid_mix">Power Grid Source</label>
+            <select class="form-select" id="grid_mix" name="grid_mix">
+              <option value="grid_national" selected>India National Grid Average (0.716 kg CO2/kWh - CEA v20.0)</option>
+              <option value="grid_regional_thermal">Thermal-Dominant Mix (0.820 kg CO2/kWh)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="background: var(--primary-light); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.25rem; border: 1px solid var(--primary-border);">
+          <h4 style="font-size: 0.9rem; margin-bottom: 0.75rem; color: var(--primary-dark);">2. Proposed Energy Target</h4>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="p_kwh">Target Monthly Consumption After Interventions (kWh)</label>
+            <input type="number" step="1" min="0" class="form-control" id="p_kwh" name="p_kwh" value="200">
+            <div class="form-help">e.g. Achieved via 24°C AC setpoint, LED retrofits, and turning off vampire standby power.</div>
+          </div>
+        </div>
+
+      {% elif sim_type == 'waste' %}
+        <div style="background: var(--border-subtle); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.25rem;">
+          <h4 style="font-size: 0.9rem; margin-bottom: 0.75rem; color: #1e293b;">1. Baseline Waste Discard</h4>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="b_waste_kg">Total Monthly Mixed Waste to Landfill (kg)</label>
+            <input type="number" step="1" min="1" class="form-control" id="b_waste_kg" name="b_waste_kg" value="20">
+          </div>
+        </div>
+
+        <div style="background: var(--primary-light); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.25rem; border: 1px solid var(--primary-border);">
+          <h4 style="font-size: 0.9rem; margin-bottom: 0.75rem; color: var(--primary-dark);">2. Proposed Diversion Streams</h4>
+          <div class="form-group">
+            <label class="form-label" for="p_compost_kg">Organic Waste Segregated for Composting (kg)</label>
+            <input type="number" step="0.5" min="0" class="form-control" id="p_compost_kg" name="p_compost_kg" value="12">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="p_recycle_kg">Dry Recyclables Sent for Recycling (kg)</label>
+            <input type="number" step="0.5" min="0" class="form-control" id="p_recycle_kg" name="p_recycle_kg" value="6">
+          </div>
+        </div>
+      {% endif %}
+
+      <button type="submit" class="btn btn-primary" style="width: 100%;">
+        <i class="fa-solid fa-play"></i> Run Carbon Simulation
+      </button>
+    </form>
+  </div>
+
+  <!-- Simulation Results & Analysis Card -->
+  <div>
+    {% if sim_result %}
+      <div class="card" style="border: 2px solid var(--primary); background: #fafcfb;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--primary-dark);">
+            <i class="fa-solid fa-square-poll-vertical"></i> Simulation Outcome
+          </h3>
+          <span class="badge" style="background: #fef3c7; color: #92400e; font-size: 0.75rem;">
+            Theoretical Estimate (Simulated)
+          </span>
+        </div>
+
+        <!-- Before vs After Comparison Grid -->
+        <div class="sim-comparison-cols">
+          <div class="sim-box">
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Baseline</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #1e293b; margin: 0.25rem 0;">
+              {{ sim_result.baseline.emissions_kg_co2e }}
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">kg CO2e</div>
+          </div>
+
+          <div class="sim-arrow">
+            <i class="fa-solid fa-arrow-right"></i>
+          </div>
+
+          <div class="sim-box" style="border-color: var(--primary); background: #ecfdf5;">
+            <div style="font-size: 0.75rem; color: var(--primary-dark); text-transform: uppercase;">Proposed</div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: #047857; margin: 0.25rem 0;">
+              {{ sim_result.proposed.emissions_kg_co2e }}
+            </div>
+            <div style="font-size: 0.75rem; color: var(--primary-dark);">kg CO2e</div>
+          </div>
+        </div>
+
+        <!-- Impact Summary Highlights -->
+        <div class="grid-2" style="margin-bottom: 1rem;">
+          <div style="background: white; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; text-align: center;">
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Emissions Avoided</div>
+            <div style="font-size: 1.8rem; font-weight: 800; color: #059669;">
+              {{ sim_result.avoided_kg_co2e }} <span style="font-size: 0.9rem; font-weight: 500;">kg CO2e</span>
+            </div>
+            <div style="font-size: 0.8rem; font-weight: 700; color: #059669;">
+              {{ sim_result.percentage_reduction }}% Net Reduction
+            </div>
+          </div>
+
+          <div style="background: white; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; text-align: center;">
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Financial Benefit</div>
+            <div style="font-size: 1.8rem; font-weight: 800; color: #0284c7;">
+              {% if sim_result.financial_savings_inr > 0 %}
+                ₹{{ sim_result.financial_savings_inr }}
+              {% else %}
+                ₹0.00
+              {% endif %}
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-muted);">
+              {% if sim_type == 'electricity' %}Direct Monthly Bill Reduction{% else %}Estimated Fuel / Commute Savings{% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Factors & Assumptions Callout -->
+        <div style="background: #f8fafc; border-radius: var(--radius-md); padding: 0.85rem; font-size: 0.82rem; color: var(--text-muted); border: 1px solid var(--border-color);">
+          <strong><i class="fa-solid fa-circle-info"></i> Methodology & Assumptions:</strong><br>
+          {{ sim_result.assumptions }}
+        </div>
+
+        <div style="margin-top: 1.25rem; display: flex; justify-content: space-between; align-items: center;">
+          <a href="{{ url_for('view_recommendations') }}" class="btn btn-sm btn-primary">
+            <i class="fa-solid fa-bullseye"></i> Find Matching Challenges &rarr;
+          </a>
+          <span style="font-size: 0.78rem; color: var(--text-muted);">
+            To turn this into points, complete the action and upload proof!
+          </span>
+        </div>
+      </div>
+    {% else %}
+      <div class="card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 300px; text-align: center; color: var(--text-muted);">
+        <i class="fa-solid fa-chart-line" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
+        <h3 style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 0.5rem;">Configure & Click "Run Carbon Simulation"</h3>
+        <p style="font-size: 0.85rem; max-width: 380px;">
+          Adjust the baseline and proposed options on the left to see instant calculations of emissions avoided, percentage reduction, and rupee cost savings.
+        </p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

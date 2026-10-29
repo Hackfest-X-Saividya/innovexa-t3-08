@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Progress Tracking & Historical Audit</h1>
+    <p class="page-subtitle">Track your longitudinal footprint trajectory, verified emission reductions, and environmental audit logs</p>
+  </div>
+  <div>
+    <a href="{{ url_for('calculator') }}" class="btn btn-primary">
+      <i class="fa-solid fa-plus-circle"></i> Log New Activity
+    </a>
+  </div>
+</div>
+
+<!-- Net Carbon Accounting Strip -->
+<div class="grid-3">
+  <!-- Gross Logged Footprint -->
+  <div class="card" style="border-left: 4px solid #f59e0b;">
+    <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">
+      Gross Estimated Emissions
+    </div>
+    <div style="font-size: 1.8rem; font-weight: 800; color: #1e293b; margin: 0.25rem 0;">
+      {{ summary.total_emissions }} <span style="font-size: 0.9rem; font-weight: 500;">kg CO2e</span>
+    </div>
+    <div style="font-size: 0.78rem; color: var(--text-muted);">
+      Sum of all {{ all_activities | length }} recorded activity logs
+    </div>
+  </div>
+
+  <!-- Verified Reductions -->
+  <div class="card" style="border-left: 4px solid #10b981;">
+    <div style="font-size: 0.75rem; color: #047857; text-transform: uppercase; font-weight: 700;">
+      Verified Reductions (Evidence-Backed)
+    </div>
+    <div style="font-size: 1.8rem; font-weight: 800; color: #059669; margin: 0.25rem 0;">
+      -{{ total_verified_savings }} <span style="font-size: 0.9rem; font-weight: 500;">kg CO2e</span>
+    </div>
+    <div style="font-size: 0.78rem; color: var(--text-muted);">
+      From {{ approved_actions | length }} verified challenge photo proofs
+    </div>
+  </div>
+
+  <!-- Net Footprint -->
+  <div class="card" style="border-left: 4px solid #0284c7;">
+    <div style="font-size: 0.75rem; color: #0369a1; text-transform: uppercase; font-weight: 700;">
+      Net Carbon Footprint
+    </div>
+    <div style="font-size: 1.8rem; font-weight: 800; color: #0284c7; margin: 0.25rem 0;">
+      {{ (summary.total_emissions - total_verified_savings) | round(2) }} <span style="font-size: 0.9rem; font-weight: 500;">kg CO2e</span>
+    </div>
+    <div style="font-size: 0.78rem; color: var(--text-muted);">
+      Adjusted net greenhouse impact
+    </div>
+  </div>
+</div>
+
+<!-- Methodology Distinctions Banner -->
+<div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem 1.25rem; margin-bottom: 2rem; font-size: 0.82rem; line-height: 1.6;">
+  <strong style="color: var(--primary-dark);"><i class="fa-solid fa-scale-balanced"></i> Accounting Transparency & Categorization:</strong>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 0.5rem;">
+    <div>
+      <span style="font-weight: 700; color: #1e293b;">1. Recorded Activity Data:</span>
+      <p style="color: var(--text-muted);">Logged by the user with documented emission factors (e.g. CEA grid factor 0.716 kg/kWh). These constitute the primary footprint baseline.</p>
+    </div>
+    <div>
+      <span style="font-weight: 700; color: #059669;">2. Verified Evidence Reductions:</span>
+      <p style="color: var(--text-muted);">Actions backed by uploaded tickets/meter bills inspected and approved by the sustainability reviewer.</p>
+    </div>
+    <div>
+      <span style="font-weight: 700; color: #d97706;">3. Simulated Reductions:</span>
+      <p style="color: var(--text-muted);">What-if scenarios generated in the Simulator for planning purposes. They are strictly kept separate and not counted in the official ledger.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Category Emissions Trend Chart -->
+<div class="card" style="margin-bottom: 2rem;">
+  <h2 class="card-title">
+    <i class="fa-solid fa-chart-column" style="color: var(--primary);"></i> Category-Wise Emissions Overview
+  </h2>
+  <div style="position: relative; height: 280px;">
+    <canvas id="progressCategoryBarChart"></canvas>
+  </div>
+</div>
+
+<!-- Section 1: Verified Reductions Ledger -->
+<div class="card" style="margin-bottom: 2rem;">
+  <h2 class="card-title">
+    <i class="fa-solid fa-shield-check" style="color: #059669;"></i> Verified Action Reductions Ledger (Approved Challenges)
+  </h2>
+
+  {% if approved_actions %}
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Action Date</th>
+            <th>Verified Date</th>
+            <th>Challenge Title</th>
+            <th>Category</th>
+            <th>Estimated CO2e Avoided</th>
+            <th>Financial Benefit</th>
+            <th>Points Awarded</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in approved_actions %}
+            <tr>
+              <td>{{ a.submission_date }}</td>
+              <td>{{ a.reviewed_at }}</td>
+              <td><strong>{{ a.challenge_title }}</strong></td>
+              <td style="text-transform: capitalize;">{{ a.category }}</td>
+              <td><strong style="color: #059669;">-{{ a.co2e_saving_estimate }} kg CO2e</strong></td>
+              <td>{% if a.financial_saving_estimate > 0 %}₹{{ a.financial_saving_estimate | round(0) | int }}{% else %}&mdash;{% endif %}</td>
+              <td><span class="badge badge-approved">+{{ a.points_awarded }} Pts</span></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p style="color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 1.5rem;">
+      No approved reduction challenges yet. Submit photo proof in the Evidence module to record verified savings!
+    </p>
+  {% endif %}
+</div>
+
+<!-- Section 2: Complete Activity History Log -->
+<div class="card">
+  <h2 class="card-title">
+    <i class="fa-solid fa-clock-rotate-left"></i> Complete Activity History Log
+  </h2>
+
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Period</th>
+          <th>Category</th>
+          <th>Activity Description</th>
+          <th>Input Data</th>
+          <th>Emission Factor</th>
+          <th>Total CO2e</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for act in all_activities %}
+          <tr>
+            <td>{{ act.record_date }}</td>
+            <td><span class="badge badge-available">{{ act.reporting_period }}</span></td>
+            <td style="text-transform: capitalize;"><strong>{{ act.category }}</strong></td>
+            <td>{{ act.activity_name }}</td>
+            <td>{{ act.input_value }} {{ act.input_unit }}</td>
+            <td style="font-size: 0.78rem; color: var(--text-muted);">{{ act.emission_factor }} kg CO2e/unit</td>
+            <td><strong>{{ act.emissions_kg_co2e }} kg CO2e</strong></td>
+            <td style="font-size: 0.8rem; color: var(--text-muted);">{{ act.notes or '&mdash;' }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const barCanvas = document.getElementById("progressCategoryBarChart");
+  if (barCanvas) {
+    const tVal = {{ summary.category_totals.transportation | default(0) }};
+    const eVal = {{ summary.category_totals.electricity | default(0) }};
+    const fVal = {{ summary.category_totals.fuel | default(0) }};
+    const wVal = {{ summary.category_totals.waste | default(0) }};
+
+    new Chart(barCanvas, {
+      type: "bar",
+      data: {
+        labels: ["Transportation", "Electricity Consumption", "Fuel Usage (LPG/Petrol)", "Waste Generation"],
+        datasets: [{
+          label: "Estimated Emissions (kg CO2e)",
+          data: [tVal, eVal, fVal, wVal],
+          backgroundColor: ["#3b82f6", "#f59e0b", "#ef4444", "#10b981"],
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: "kg CO2e"
+            }
+          }
+        }
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

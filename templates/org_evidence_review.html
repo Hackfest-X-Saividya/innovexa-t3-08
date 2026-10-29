@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-container" style="max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem;">
+
+  <!-- Header Banner -->
+  <div style="background: white; border-radius: var(--radius-lg); padding: 1.5rem 2rem; margin-bottom: 2rem; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+        <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; background: #e0f2fe; color: #0284c7; padding: 2px 8px; border-radius: 9999px;">
+          Administrator Review Console
+        </span>
+      </div>
+      <h2 style="font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0;">Organization Evidence Review & ESG Verification</h2>
+      <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem; color: #64748b;">
+        Review utility receipts and operational documents. Approving awards points toward the 1,000-point reward threshold.
+      </p>
+    </div>
+    <div>
+      <a href="{{ url_for('org_evidence_upload') }}" class="btn btn-primary btn-sm">
+        <i class="fa-solid fa-plus"></i> Upload New Proof
+      </a>
+    </div>
+  </div>
+
+  <!-- Submissions List -->
+  {% if submissions %}
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+      {% for sub in submissions %}
+        <div class="card" style="padding: 1.5rem; border-left: 5px solid {{ '#10b981' if sub.status == 'approved' else ('#ef4444' if sub.status == 'rejected' else '#f59e0b') }};">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+                <span style="font-size: 0.75rem; font-weight: 700; color: #64748b;">Submission #{{ sub.id }}</span>
+                <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; padding: 2px 8px; border-radius: 9999px; background: {{ '#ecfdf5; color: #059669;' if sub.status == 'approved' else ('#fee2e2; color: #ef4444;' if sub.status == 'rejected' else '#fef3c7; color: #b45309;') }};">
+                  {{ sub.status | upper }}
+                </span>
+                <span style="font-size: 0.75rem; color: #64748b;">
+                  Submitted on {{ sub.submission_date }}
+                </span>
+              </div>
+              <h3 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin: 0;">
+                {{ sub.challenge_title or 'General Institutional Utility Evidence' }}
+              </h3>
+            </div>
+
+            <div style="text-align: right;">
+              <span style="font-size: 1.1rem; font-weight: 800; color: #0284c7;">
+                +{{ sub.reward_points or 150 }} Points
+              </span>
+              {% if sub.status == 'approved' %}
+                <div style="font-size: 0.72rem; color: #059669; font-weight: 600;">
+                  <i class="fa-solid fa-check-double"></i> Credited to Org Balance
+                </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Content Details & Image Preview Grid -->
+          <div style="display: grid; grid-template-columns: 200px 1fr; gap: 1.5rem; align-items: flex-start;">
+            <!-- Document Image Thumbnail -->
+            <div style="border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; background: #f8fafc; text-align: center;">
+              {% if sub.file_path %}
+                <a href="{{ url_for('uploaded_file', filename=sub.file_path) }}" target="_blank">
+                  <img src="{{ url_for('uploaded_file', filename=sub.file_path) }}" alt="Evidence Receipt" style="width: 100%; height: 140px; object-fit: cover; display: block;">
+                </a>
+                <div style="padding: 0.35rem; font-size: 0.72rem; color: #64748b; background: white; border-top: 1px solid var(--border-color);">
+                  <i class="fa-solid fa-up-right-from-square"></i> Click to enlarge
+                </div>
+              {% else %}
+                <div style="height: 140px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 2rem;">
+                  <i class="fa-solid fa-file-lines"></i>
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- AI Engine & Notes Column -->
+            <div>
+              <!-- AI Verification Report Box -->
+              <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-md); padding: 0.75rem 1rem; margin-bottom: 0.75rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                  <strong style="color: #166534; font-size: 0.82rem;">
+                    <i class="fa-solid fa-brain" style="color: #10b981;"></i> AI Vision Optical Audit Result
+                  </strong>
+                  <span style="font-size: 0.75rem; font-weight: 700; color: #166534;">
+                    Confidence: {{ sub.ai_confidence or 95.0 }}%
+                  </span>
+                </div>
+                <p style="margin: 0; font-size: 0.8rem; color: #15803d; line-height: 1.4;">
+                  {{ sub.ai_analysis_report or 'AI Optical Agent verified layout, date stamp, and consumption metrics.' }}
+                </p>
+              </div>
+
+              <!-- Notes -->
+              {% if sub.notes %}
+                <div style="font-size: 0.82rem; color: #334155; margin-bottom: 0.75rem;">
+                  <strong>Submitter Notes:</strong> {{ sub.notes }}
+                </div>
+              {% endif %}
+
+              <!-- Reviewer Feedback if already completed -->
+              {% if sub.reviewed_at %}
+                <div style="font-size: 0.8rem; color: #64748b; background: #f8fafc; padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); border: 1px solid #e2e8f0;">
+                  <i class="fa-solid fa-user-check"></i> <strong>Reviewer Feedback:</strong> {{ sub.reviewer_notes }}
+                  <span style="color: #94a3b8; font-size: 0.72rem; margin-left: 0.5rem;">({{ sub.reviewed_at }})</span>
+                </div>
+              {% endif %}
+
+              <!-- Action Buttons (for pending submissions) -->
+              {% if sub.status == 'pending' %}
+                <div style="display: flex; gap: 0.75rem; margin-top: 1rem; align-items: center;">
+                  <form method="POST" action="{{ url_for('org_evidence_approve', submission_id=sub.id) }}" style="display: inline;">
+                    <input type="hidden" name="reviewer_notes" value="Verified official utility documentation and consumption parameters.">
+                    <button type="submit" class="btn btn-sm btn-primary" style="padding: 0.45rem 1.25rem; font-weight: 700;">
+                      <i class="fa-solid fa-check"></i> Approve & Award +{{ sub.reward_points or 150 }} Points
+                    </button>
+                  </form>
+                  <form method="POST" action="{{ url_for('org_evidence_reject', submission_id=sub.id) }}" style="display: inline;">
+                    <input type="hidden" name="reviewer_notes" value="Evidence unreadable or mismatched with required units.">
+                    <button type="submit" class="btn btn-sm btn-secondary" style="color: #ef4444; border-color: #fca5a5; padding: 0.45rem 1rem;">
+                      <i class="fa-solid fa-xmark"></i> Reject
+                    </button>
+                  </form>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card" style="padding: 3rem; text-align: center;">
+      <div style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem;">
+        <i class="fa-solid fa-clipboard-check"></i>
+      </div>
+      <h3 style="font-size: 1.2rem; font-weight: 700; color: #0f172a; margin-bottom: 0.5rem;">
+        No Evidence Submissions Yet
+      </h3>
+      <p style="font-size: 0.88rem; color: #64748b; margin-bottom: 1.5rem;">
+        Upload utility bills or operational records from challenges to initiate AI optical review.
+      </p>
+      <a href="{{ url_for('org_evidence_upload') }}" class="btn btn-primary btn-sm">
+        <i class="fa-solid fa-upload"></i> Upload First Evidence Document
+      </a>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

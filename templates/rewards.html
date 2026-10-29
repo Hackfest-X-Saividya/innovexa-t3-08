@@ -1,0 +1,412 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Rewards Catalog & Wallet</h1>
+    <p class="page-subtitle">Behavioral incentive vouchers unlocked by completing verified sustainable challenges (Threshold: 100 Points)</p>
+  </div>
+  <div style="display: flex; gap: 0.5rem; align-items: center;">
+    {% if user_account_type == 'organization' %}
+      <span class="badge" style="background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; padding: 0.45rem 0.85rem; font-size: 0.82rem; font-weight: 700;">
+        <i class="fa-solid fa-building"></i> Organization Account Mode
+      </span>
+    {% else %}
+      <span class="badge" style="background: #ecfdf5; color: #065f46; border: 1px solid var(--primary-border); padding: 0.45rem 0.85rem; font-size: 0.82rem; font-weight: 700;">
+        <i class="fa-solid fa-user-graduate"></i> Individual Account Mode
+      </span>
+    {% endif %}
+    <span class="badge" style="background: #fef3c7; color: #92400e; padding: 0.45rem 0.85rem; font-size: 0.82rem;">
+      <i class="fa-solid fa-gift"></i> Simulated Demo Rewards
+    </span>
+  </div>
+</div>
+
+<!-- Points Summary Card & 100-Point Milestone Progress -->
+<div class="points-milestone-box" style="margin-bottom: 2rem;">
+  <div class="points-header">
+    <div>
+      <span style="text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; opacity: 0.9;">Available Points Balance</span>
+      <div class="points-badge-large">{{ points_info.balance }} <span style="font-size: 1.1rem; font-weight: 500;">Points</span></div>
+      <div style="font-size: 0.85rem; opacity: 0.9; margin-top: 0.25rem;">
+        Total Earned: <strong>{{ points_info.total_earned }} pts</strong> &bull; Total Redeemed: <strong>{{ points_info.total_redeemed }} pts</strong>
+      </div>
+    </div>
+
+    <div style="text-align: right;">
+      <div style="font-size: 0.85rem; opacity: 0.9;">Redemption Threshold: <strong>100 Points</strong></div>
+      <div style="margin-top: 0.5rem;">
+        {% if points_info.can_redeem %}
+          <span class="badge" style="background: #34d399; color: #064e3b; font-weight: 800; font-size: 0.9rem; padding: 0.4rem 0.8rem;">
+            <i class="fa-solid fa-lock-open"></i> Threshold Reached! Rewards Active
+          </span>
+        {% else %}
+          <span class="badge" style="background: rgba(255,255,255,0.25); color: white; font-weight: 700; font-size: 0.85rem; padding: 0.4rem 0.8rem;">
+            <i class="fa-solid fa-hourglass-half"></i> You need {{ points_info.points_needed }} more points
+          </span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="points-progress-bar-bg">
+    <div class="points-progress-bar-fill" style="width: {{ points_info.progress_percentage }}%;"></div>
+  </div>
+
+  <div style="display: flex; justify-content: space-between; font-size: 0.82rem; opacity: 0.9;">
+    <span>Progress toward milestone: {{ points_info.progress_percentage }}%</span>
+    {% if not points_info.can_redeem %}
+      <span>Complete and get 1 more challenge approved to reach 100 pts!</span>
+    {% else %}
+      <span>Eligible to redeem any reward at or below {{ points_info.balance }} pts</span>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Threshold Disclaimer & Hackathon Transparency Notice -->
+<div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius-md); padding: 0.85rem 1.25rem; margin-bottom: 2rem; font-size: 0.82rem; color: #92400e; display: flex; align-items: center; gap: 0.75rem;">
+  <i class="fa-solid fa-circle-exclamation" style="font-size: 1.25rem;"></i>
+  <div>
+    <strong>Hackathon Demonstration Notice:</strong> Green Pulse points are behavioral habit incentives, not certified carbon offsets or financial credits.
+    All vouchers, discounts, and transit benefits displayed below are demonstration models for the hackathon prototype.
+  </div>
+</div>
+
+<!-- DOMAIN-SPECIFIC REWARDS TAB CONTROLLER -->
+<div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--primary-dark); margin: 0;">
+      <i class="fa-solid fa-store"></i> Rewards Catalog by Domain
+    </h2>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.25rem 0 0;">
+      Browse incentives tailored for individuals or specialized industrial/campus entities
+    </p>
+  </div>
+
+  <!-- Tab Filter Buttons -->
+  <div style="display: inline-flex; background: #e2e8f0; padding: 0.3rem; border-radius: var(--radius-md); gap: 0.35rem;">
+    <button type="button" id="tab-btn-user" class="btn btn-sm" onclick="showRewardTab('user')" 
+            style="border: none; padding: 0.45rem 0.9rem; border-radius: var(--radius-sm); font-weight: 700; font-size: 0.82rem; cursor: pointer; transition: all 0.2s; {{ 'background: white; color: var(--primary-dark); box-shadow: var(--shadow-sm);' if user_account_type != 'organization' else 'background: transparent; color: #64748b;' }}">
+      <i class="fa-solid fa-user-graduate"></i> Individual & Student ({{ individual_rewards|length }})
+    </button>
+    <button type="button" id="tab-btn-org" class="btn btn-sm" onclick="showRewardTab('org')" 
+            style="border: none; padding: 0.45rem 0.9rem; border-radius: var(--radius-sm); font-weight: 700; font-size: 0.82rem; cursor: pointer; transition: all 0.2s; {{ 'background: #1e40af; color: white; box-shadow: var(--shadow-sm);' if user_account_type == 'organization' else 'background: transparent; color: #64748b;' }}">
+      <i class="fa-solid fa-industry"></i> Organization & Industry ({{ organization_rewards|length }})
+    </button>
+    <button type="button" id="tab-btn-all" class="btn btn-sm" onclick="showRewardTab('all')" 
+            style="border: none; padding: 0.45rem 0.9rem; border-radius: var(--radius-sm); font-weight: 700; font-size: 0.82rem; cursor: pointer; transition: all 0.2s; background: transparent; color: #64748b;">
+      <i class="fa-solid fa-border-all"></i> View All ({{ all_rewards|length }})
+    </button>
+  </div>
+</div>
+
+<!-- Section 1A: Individual / Student Rewards Pane -->
+<div id="pane-user" style="{{ 'display: block;' if user_account_type != 'organization' else 'display: none;' }}">
+  <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-md); padding: 0.75rem 1rem; margin-bottom: 1.25rem; font-size: 0.85rem; color: #166534; display: flex; align-items: center; justify-content: space-between;">
+    <span><i class="fa-solid fa-user-check"></i> <strong>Individual Domain Incentives:</strong> Micro-mobility recharge credits, campus cafe discounts, student bookstore vouchers, and native tree adoption tags.</span>
+    <span class="badge badge-approved">Individual Portal</span>
+  </div>
+
+  <div class="grid-3" style="margin-bottom: 2.5rem;">
+    {% for r in individual_rewards %}
+      <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; border-color: {{ '#a7f3d0' if r.is_eligible else 'var(--border-color)' }};">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+            <span style="width: 44px; height: 44px; border-radius: var(--radius-md); background: #dcfce7; color: #047857; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+              <i class="fa-solid {{ r.icon }}"></i>
+            </span>
+            <div style="text-align: right;">
+              <span class="badge" style="background: {{ '#dcfce7' if r.is_eligible else '#f1f5f9' }}; color: {{ '#166534' if r.is_eligible else '#64748b' }}; font-weight: 800; font-size: 0.85rem;">
+                {{ r.points_cost }} Points
+              </span>
+              <div style="font-size: 0.7rem; color: #047857; font-weight: 700; margin-top: 0.2rem;">Individual Tier</div>
+            </div>
+          </div>
+
+          <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 0.25rem;">
+            {{ r.category }}
+          </div>
+          <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem;">
+            {{ r.title }}
+          </h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem; line-height: 1.5;">
+            {{ r.description }}
+          </p>
+
+          <div style="font-size: 0.75rem; color: #94a3b8; border-top: 1px dashed var(--border-color); padding-top: 0.5rem; margin-top: 0.5rem;">
+            <strong>Terms:</strong> {{ r.terms }}
+          </div>
+        </div>
+
+        <div style="margin-top: 1.25rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+          {% if r.is_eligible %}
+            <form action="{{ url_for('redeem_reward_action', reward_id=r.id) }}" method="POST" onsubmit="return confirm('Redeem {{ r.title }} for {{ r.points_cost }} points?');">
+              <button type="submit" class="btn btn-primary" style="width: 100%;">
+                <i class="fa-solid fa-gift"></i> Redeem with {{ r.points_cost }} Points
+              </button>
+            </form>
+          {% else %}
+            <div style="text-align: center;">
+              <button class="btn btn-secondary" style="width: 100%; opacity: 0.6; cursor: not-allowed;" disabled>
+                <i class="fa-solid fa-lock"></i> Requires {{ r.points_cost }} Points
+              </button>
+              <div style="font-size: 0.75rem; color: #d97706; margin-top: 0.35rem;">
+                Need {{ r.points_short }} more points to unlock
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Section 1B: Organization / Industry Rewards Pane -->
+<div id="pane-org" style="{{ 'display: block;' if user_account_type == 'organization' else 'display: none;' }}">
+  <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: var(--radius-md); padding: 0.75rem 1rem; margin-bottom: 1.25rem; font-size: 0.85rem; color: #1e40af; display: flex; align-items: center; justify-content: space-between;">
+    <span><i class="fa-solid fa-industry"></i> <strong>Domain-Specific Organization & Industry Rewards:</strong> BEE/ISO 50001 Energy Audits, Renewable Energy Credits (RECs), Corporate EV Fleet Subsidies, SPCB E-Waste Certification, and Rooftop Solar Net-Metering.</span>
+    <span class="badge" style="background: #1e40af; color: white;">Institutional Tier</span>
+  </div>
+
+  <div class="grid-3" style="margin-bottom: 2.5rem;">
+    {% for r in organization_rewards %}
+      <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; border-color: {{ '#bfdbfe' if r.is_eligible else 'var(--border-color)' }}; box-shadow: var(--shadow-sm);">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+            <span style="width: 44px; height: 44px; border-radius: var(--radius-md); background: #dbeafe; color: #1e40af; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+              <i class="fa-solid {{ r.icon }}"></i>
+            </span>
+            <div style="text-align: right;">
+              <span class="badge" style="background: {{ '#dbeafe' if r.is_eligible else '#f1f5f9' }}; color: {{ '#1e40af' if r.is_eligible else '#64748b' }}; font-weight: 800; font-size: 0.85rem;">
+                {{ r.points_cost }} Points
+              </span>
+              <div style="font-size: 0.7rem; color: #1e40af; font-weight: 700; margin-top: 0.2rem;">🏢 Org / Industry</div>
+            </div>
+          </div>
+
+          <div style="font-size: 0.75rem; text-transform: uppercase; color: #1e40af; font-weight: 700; margin-bottom: 0.25rem;">
+            {{ r.category }}
+          </div>
+          <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem;">
+            {{ r.title }}
+          </h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem; line-height: 1.5;">
+            {{ r.description }}
+          </p>
+
+          <div style="font-size: 0.75rem; color: #64748b; border-top: 1px dashed var(--border-color); padding-top: 0.5rem; margin-top: 0.5rem;">
+            <strong>Institutional Terms:</strong> {{ r.terms }}
+          </div>
+        </div>
+
+        <div style="margin-top: 1.25rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+          {% if r.is_eligible %}
+            <form action="{{ url_for('redeem_reward_action', reward_id=r.id) }}" method="POST" onsubmit="return confirm('Redeem institutional reward: {{ r.title }} for {{ r.points_cost }} points?');">
+              <button type="submit" class="btn btn-primary" style="width: 100%; background: #1e40af;">
+                <i class="fa-solid fa-building-circle-check"></i> Redeem with {{ r.points_cost }} Points
+              </button>
+            </form>
+          {% else %}
+            <div style="text-align: center;">
+              <button class="btn btn-secondary" style="width: 100%; opacity: 0.6; cursor: not-allowed;" disabled>
+                <i class="fa-solid fa-lock"></i> Requires {{ r.points_cost }} Points
+              </button>
+              <div style="font-size: 0.75rem; color: #d97706; margin-top: 0.35rem;">
+                Need {{ r.points_short }} more points to unlock
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Section 1C: All Combined Rewards Pane -->
+<div id="pane-all" style="display: none;">
+  <div class="grid-3" style="margin-bottom: 2.5rem;">
+    {% for r in all_rewards %}
+      <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; border-color: {{ '#a7f3d0' if r.is_eligible else 'var(--border-color)' }};">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+            <span style="width: 44px; height: 44px; border-radius: var(--radius-md); background: {{ '#dbeafe' if r.target_audience == 'organization' else '#dcfce7' }}; color: {{ '#1e40af' if r.target_audience == 'organization' else '#047857' }}; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+              <i class="fa-solid {{ r.icon }}"></i>
+            </span>
+            <div style="text-align: right;">
+              <span class="badge" style="background: {{ '#dcfce7' if r.is_eligible else '#f1f5f9' }}; color: {{ '#166534' if r.is_eligible else '#64748b' }}; font-weight: 800; font-size: 0.85rem;">
+                {{ r.points_cost }} Pts
+              </span>
+              <div style="font-size: 0.7rem; color: {{ '#1e40af' if r.target_audience == 'organization' else '#047857' }}; font-weight: 700; margin-top: 0.2rem;">
+                {{ '🏢 Organization' if r.target_audience == 'organization' else '🧑‍🎓 Individual' }}
+              </div>
+            </div>
+          </div>
+
+          <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 0.25rem;">
+            {{ r.category }}
+          </div>
+          <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem;">
+            {{ r.title }}
+          </h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem; line-height: 1.5;">
+            {{ r.description }}
+          </p>
+
+          <div style="font-size: 0.75rem; color: #94a3b8; border-top: 1px dashed var(--border-color); padding-top: 0.5rem; margin-top: 0.5rem;">
+            <strong>Terms:</strong> {{ r.terms }}
+          </div>
+        </div>
+
+        <div style="margin-top: 1.25rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+          {% if r.is_eligible %}
+            <form action="{{ url_for('redeem_reward_action', reward_id=r.id) }}" method="POST" onsubmit="return confirm('Redeem {{ r.title }} for {{ r.points_cost }} points?');">
+              <button type="submit" class="btn btn-primary" style="width: 100%; background: {{ '#1e40af' if r.target_audience == 'organization' else 'var(--primary)' }};">
+                <i class="fa-solid fa-gift"></i> Redeem with {{ r.points_cost }} Points
+              </button>
+            </form>
+          {% else %}
+            <div style="text-align: center;">
+              <button class="btn btn-secondary" style="width: 100%; opacity: 0.6; cursor: not-allowed;" disabled>
+                <i class="fa-solid fa-lock"></i> Requires {{ r.points_cost }} Points
+              </button>
+              <div style="font-size: 0.75rem; color: #d97706; margin-top: 0.35rem;">
+                Need {{ r.points_short }} more points to unlock
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Section 2: My Redeemed Vouchers Wallet -->
+<div style="margin-bottom: 2.5rem;">
+  <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 1.25rem;">
+    <i class="fa-solid fa-wallet"></i> My Redeemed Demonstration Vouchers
+  </h2>
+
+  {% if redemptions %}
+    <div class="grid-3">
+      {% for v in redemptions %}
+        <div class="voucher-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">
+              {{ v.category }}
+            </span>
+            <span class="badge badge-approved" style="font-size: 0.72rem;">
+              {{ v.status | upper }}
+            </span>
+          </div>
+
+          <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 0.25rem;">
+            {{ v.reward_title }}
+          </h3>
+
+          <!-- Unique Demo Voucher Code Display -->
+          <div class="voucher-code-box">
+            {{ v.voucher_code }}
+          </div>
+
+          <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
+            Redeemed on {{ v.redeemed_at }} (Cost: {{ v.points_spent }} pts)<br>
+            <em>{{ v.terms }}</em>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+      <i class="fa-solid fa-ticket" style="font-size: 2.5rem; color: #cbd5e1; margin-bottom: 0.75rem;"></i>
+      <p style="font-size: 0.9rem;">No vouchers redeemed yet.</p>
+      <p style="font-size: 0.8rem;">Once your balance reaches 100 points, redeem any offer above to generate your unique voucher code!</p>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Section 3: Points Transaction Audit History -->
+<div class="card">
+  <h2 class="card-title">
+    <i class="fa-solid fa-receipt"></i> Points Ledger & Transaction Audit History
+  </h2>
+
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Reference Type</th>
+          <th>Points</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for tx in points_info.transactions %}
+          <tr>
+            <td>{{ tx.created_at }}</td>
+            <td>
+              <span class="badge {{ 'badge-approved' if tx.transaction_type == 'earned' else 'badge-rejected' }}">
+                {{ tx.transaction_type | capitalize }}
+              </span>
+            </td>
+            <td><strong>{{ tx.description }}</strong></td>
+            <td style="font-size: 0.8rem; color: var(--text-muted);">{{ tx.reference_type }}</td>
+            <td>
+              {% if tx.transaction_type == 'earned' %}
+                <strong style="color: #059669;">+{{ tx.points }} Pts</strong>
+              {% else %}
+                <strong style="color: #dc2626;">-{{ tx.points }} Pts</strong>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+function showRewardTab(tab) {
+  const pUser = document.getElementById('pane-user');
+  const pOrg = document.getElementById('pane-org');
+  const pAll = document.getElementById('pane-all');
+  const bUser = document.getElementById('tab-btn-user');
+  const bOrg = document.getElementById('tab-btn-org');
+  const bAll = document.getElementById('tab-btn-all');
+
+  pUser.style.display = 'none';
+  pOrg.style.display = 'none';
+  pAll.style.display = 'none';
+
+  bUser.style.background = 'transparent';
+  bUser.style.color = '#64748b';
+  bUser.style.boxShadow = 'none';
+
+  bOrg.style.background = 'transparent';
+  bOrg.style.color = '#64748b';
+  bOrg.style.boxShadow = 'none';
+
+  bAll.style.background = 'transparent';
+  bAll.style.color = '#64748b';
+  bAll.style.boxShadow = 'none';
+
+  if (tab === 'user') {
+    pUser.style.display = 'block';
+    bUser.style.background = 'white';
+    bUser.style.color = 'var(--primary-dark)';
+    bUser.style.boxShadow = 'var(--shadow-sm)';
+  } else if (tab === 'org') {
+    pOrg.style.display = 'block';
+    bOrg.style.background = '#1e40af';
+    bOrg.style.color = 'white';
+    bOrg.style.boxShadow = 'var(--shadow-sm)';
+  } else {
+    pAll.style.display = 'block';
+    bAll.style.background = 'white';
+    bAll.style.color = 'var(--primary-dark)';
+    bAll.style.boxShadow = 'var(--shadow-sm)';
+  }
+}
+</script>
+{% endblock %}

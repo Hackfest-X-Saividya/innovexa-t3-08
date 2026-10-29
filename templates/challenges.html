@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Sustainability Challenges Hub</h1>
+    <p class="page-subtitle">Pledge to adopt concrete emission-cutting actions, submit photo proof, and earn Green Pulse reward points</p>
+  </div>
+  <div>
+    <a href="{{ url_for('evidence_upload') }}" class="btn btn-primary">
+      <i class="fa-solid fa-camera"></i> Submit Photo Proof &rarr;
+    </a>
+  </div>
+</div>
+
+<!-- Challenges Overview Grid -->
+<div class="grid-3">
+  {% for ch in challenges %}
+    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; position: relative;">
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+          <span style="width: 40px; height: 40px; border-radius: var(--radius-md); background: var(--primary-light); color: var(--primary-dark); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+            <i class="fa-solid {{ ch.icon }}"></i>
+          </span>
+          <span class="badge" style="background: #fef3c7; color: #b45309; font-weight: 700;">
+            +{{ ch.reward_points }} Points
+          </span>
+        </div>
+
+        <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.35rem;">
+          {{ ch.title }}
+        </h3>
+        
+        <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; margin-bottom: 0.75rem;">
+          Category: {{ ch.category }} &bull; {{ ch.difficulty }} Difficulty
+        </div>
+
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.5;">
+          {{ ch.why_recommended }}
+        </p>
+
+        <div style="background: var(--border-subtle); border-radius: var(--radius-md); padding: 0.75rem; font-size: 0.8rem; margin-bottom: 1rem;">
+          <div style="margin-bottom: 0.25rem;">
+            <strong>Est. Reduction:</strong> <span style="color: #059669; font-weight: 700;">-{{ ch.emissions_diff }} kg CO2e</span>
+          </div>
+          <div>
+            <strong>Required Evidence:</strong> {{ ch.evidence_type }}
+          </div>
+        </div>
+      </div>
+
+      <div style="border-top: 1px solid var(--border-color); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+        <span class="badge badge-{{ 'completed' if ch.status == 'completed' else ('pending' if 'submitted' in ch.status else ('accepted' if ch.status == 'accepted' else 'available')) }}">
+          {{ ch.status | capitalize }}
+        </span>
+
+        {% if ch.status == 'available' %}
+          <form action="{{ url_for('accept_challenge', challenge_id=ch.challenge_id) }}" method="POST">
+            <button type="submit" class="btn btn-sm btn-primary">
+              <i class="fa-solid fa-plus"></i> Accept
+            </button>
+          </form>
+        {% elif ch.status == 'accepted' %}
+          <a href="{{ url_for('evidence_upload', challenge_id=ch.challenge_id) }}" class="btn btn-sm btn-success">
+            <i class="fa-solid fa-camera"></i> Upload Proof
+          </a>
+        {% elif 'submitted' in ch.status %}
+          <a href="{{ url_for('evidence_upload') }}" class="btn btn-sm btn-secondary">Review Status</a>
+        {% else %}
+          <span style="font-size: 0.8rem; color: var(--primary); font-weight: 700;">
+            <i class="fa-solid fa-check-double"></i> Verified
+          </span>
+        {% endif %}
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

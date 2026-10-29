@@ -1,0 +1,516 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Sustainability Dashboard</h1>
+    <p class="page-subtitle">Real-time carbon accounting, AI-verified evidence status, daily eco-habits, and rewards</p>
+  </div>
+  <div style="display: flex; gap: 0.75rem;">
+    <a href="{{ url_for('evidence_upload') }}" class="btn btn-success">
+      <i class="fa-solid fa-camera"></i> Upload AI Evidence
+    </a>
+    <a href="{{ url_for('calculator') }}" class="btn btn-primary">
+      <i class="fa-solid fa-plus-circle"></i> Log Footprint Data
+    </a>
+  </div>
+</div>
+
+<!-- Points Milestone & 100-Point Threshold Progress Banner -->
+<div class="points-milestone-box">
+  <div class="points-header">
+    <div>
+      <span style="text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; opacity: 0.9;">Green Pulse Rewards Balance</span>
+      <div class="points-badge-large"><span id="livePointsBalance">{{ points_info.balance }}</span> <span style="font-size: 1.1rem; font-weight: 500;">Points</span></div>
+    </div>
+    <div style="text-align: right;">
+      <span style="font-size: 0.85rem; opacity: 0.9;">Next Reward Threshold: <strong>100 Points</strong></span>
+      <div style="margin-top: 0.35rem;">
+        {% if points_info.can_redeem %}
+          <span class="badge" style="background: #34d399; color: #064e3b; font-weight: bold; font-size: 0.85rem;">
+            <i class="fa-solid fa-unlock"></i> Milestone Reached! Rewards Unlocked
+          </span>
+        {% else %}
+          <span class="badge" style="background: rgba(255,255,255,0.2); color: white; font-size: 0.82rem;">
+            <i class="fa-solid fa-hourglass-half"></i> Need {{ points_info.points_needed }} more points
+          </span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress Bar to 100 Points -->
+  <div class="points-progress-bar-bg">
+    <div class="points-progress-bar-fill" style="width: {{ points_info.progress_percentage }}%;"></div>
+  </div>
+
+  <div style="display: flex; justify-content: space-between; font-size: 0.82rem; opacity: 0.9;">
+    <span>{{ points_info.total_earned }} points earned from actions & daily habits</span>
+    <span>
+      {% if points_info.can_redeem %}
+        <a href="{{ url_for('rewards_page') }}" style="color: #a7f3d0; text-decoration: underline; font-weight: bold;">
+          Redeem Vouchers Now &rarr;
+        </a>
+      {% else %}
+        <span>{{ points_info.points_needed }} pts to next unlock</span>
+      {% endif %}
+    </span>
+  </div>
+</div>
+
+<!-- LIVE AI EVIDENCE VERIFICATION STATUS CARD -->
+{% if latest_ai_verification %}
+  <div id="aiVerificationCard" class="card" style="margin-bottom: 2rem; border-left: 5px solid {{ '#059669' if latest_ai_verification.ai_status == 'verified' else '#f59e0b' }}; background: {{ '#fafcfb' if latest_ai_verification.ai_status == 'verified' else '#fffdf7' }};">
+    
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem;">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <div style="width: 44px; height: 44px; border-radius: var(--radius-md); background: {{ '#ecfdf5' if latest_ai_verification.ai_status == 'verified' else '#fef3c7' }}; color: {{ '#059669' if latest_ai_verification.ai_status == 'verified' else '#b45309' }}; display: flex; align-items: center; justify-content: center; font-size: 1.35rem;">
+          <i class="fa-solid {{ 'fa-robot' if latest_ai_verification.ai_status == 'analyzing' else 'fa-shield-check' }}"></i>
+        </div>
+        <div>
+          <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;">
+            AI Evidence Verification Engine
+          </span>
+          <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin-top: 0.15rem;">
+            {{ latest_ai_verification.ch_title }}
+          </h3>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        {% if latest_ai_verification.ai_status == 'verified' %}
+          <span class="badge" style="background: #dcfce7; color: #166534; font-size: 0.85rem; padding: 0.35rem 0.75rem;">
+            <i class="fa-solid fa-circle-check"></i> AI Verified ({{ latest_ai_verification.ai_confidence }}% Confidence)
+          </span>
+          <span class="badge" style="background: #fef3c7; color: #b45309; font-size: 0.85rem; padding: 0.35rem 0.75rem;">
+            +{{ latest_ai_verification.points_awarded }} Points Credited
+          </span>
+        {% else %}
+          <span class="badge" style="background: #fef3c7; color: #92400e; font-size: 0.85rem; padding: 0.35rem 0.75rem;">
+            <i class="fa-solid fa-spinner fa-spin"></i> AI Vision Analyzing (<span id="countdownTimer">{{ latest_ai_verification.remaining_seconds }}</span>s)
+          </span>
+          <form action="{{ url_for('api_ai_verify_now', submission_id=latest_ai_verification.id) }}" method="POST" style="display: inline;">
+            <button type="submit" class="btn btn-sm btn-primary" title="Fast-track AI verification immediately">
+              <i class="fa-solid fa-bolt"></i> Verify Instantly
+            </button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- AI Diagnostic Log & Report -->
+    <div style="margin-top: 1rem; background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.85rem 1rem; font-size: 0.85rem; line-height: 1.5; color: #334155;">
+      <div style="display: flex; gap: 1rem; align-items: center;">
+        {% if latest_ai_verification.file_name %}
+          <a href="{{ url_for('serve_upload', filename=latest_ai_verification.file_name) }}" target="_blank" title="Click to view full uploaded photo">
+            <img src="{{ url_for('serve_upload', filename=latest_ai_verification.file_name) }}" alt="Submitted Evidence" style="width: 55px; height: 55px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          </a>
+        {% endif %}
+        <div>
+          <strong style="color: var(--primary-dark);"><i class="fa-solid fa-microchip"></i> AI Vision Diagnostics:</strong>
+          <span id="aiReportText">{{ latest_ai_verification.ai_analysis_report }}</span>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+            Evidence: {{ latest_ai_verification.file_name }} &bull; Submitted on {{ latest_ai_verification.submission_date }} &bull; Target Verification SLA: &le; 2 Minutes
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% if latest_ai_verification.ai_status == 'analyzing' %}
+      <!-- Live Progress Bar -->
+      <div style="width: 100%; height: 6px; background: #f1f5f9; border-radius: 999px; overflow: hidden; margin-top: 0.75rem;">
+        <div id="aiScanProgress" style="height: 100%; width: {{ latest_ai_verification.progress_pct }}%; background: linear-gradient(90deg, #f59e0b 0%, #10b981 100%); transition: width 1s linear;"></div>
+      </div>
+    {% endif %}
+
+  </div>
+{% endif %}
+
+<!-- CASUAL EVERYDAY DEFAULT SUGGESTIONS (Zero-Barrier Green Habits) -->
+<div style="margin-bottom: 2.25rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <div>
+      <h2 style="font-size: 1.3rem; font-weight: 800; color: var(--primary-dark);">
+        <i class="fa-solid fa-leaf" style="color: var(--primary);"></i> Casual Everyday Green Habits
+      </h2>
+      <p style="font-size: 0.85rem; color: var(--text-muted);">Quick zero-barrier daily actions. Click "I Did This Today!" to earn instant micro-points and maintain your daily streak</p>
+    </div>
+    <span class="badge" style="background: #ecfdf5; color: #047857; font-size: 0.8rem; font-weight: 700;">
+      <i class="fa-solid fa-calendar-check"></i> Daily Reset
+    </span>
+  </div>
+
+  <div class="grid-4">
+    {% for habit in casual_habits %}
+      <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; padding: 1.15rem; border-color: {{ '#a7f3d0' if habit.is_completed_today else 'var(--border-color)' }}; background: {{ '#fafdfb' if habit.is_completed_today else '#ffffff' }};">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+            <span style="width: 36px; height: 36px; border-radius: var(--radius-md); background: var(--primary-light); color: var(--primary-dark); display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+              <i class="fa-solid {{ habit.icon }}"></i>
+            </span>
+            <span class="badge" style="background: #fef3c7; color: #b45309; font-weight: 800; font-size: 0.78rem;">
+              +{{ habit.points_reward }} Pts
+            </span>
+          </div>
+
+          <h4 style="font-size: 0.95rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.35rem; line-height: 1.3;">
+            {{ habit.title }}
+          </h4>
+          <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 0.5rem;">
+            {{ habit.description }}
+          </p>
+
+          <div style="font-size: 0.75rem; color: #059669; font-weight: 700; margin-bottom: 0.75rem;">
+            <i class="fa-solid fa-smog"></i> Saves ~{{ habit.co2e_saved_kg }} kg CO2e
+          </div>
+        </div>
+
+        <div>
+          {% if habit.is_completed_today %}
+            <button class="btn btn-sm btn-secondary" style="width: 100%; background: #ecfdf5; border-color: #a7f3d0; color: #065f46; font-weight: 700; cursor: default;" disabled>
+              <i class="fa-solid fa-check"></i> Completed Today
+            </button>
+          {% else %}
+            <form action="{{ url_for('log_habit', habit_id=habit.id) }}" method="POST">
+              <button type="submit" class="btn btn-sm btn-primary" style="width: 100%;">
+                <i class="fa-solid fa-circle-check"></i> I Did This Today!
+              </button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Metric / KPI Summary Cards (Module A) -->
+<div class="grid-4">
+  <!-- Total Carbon Emissions -->
+  <div class="card kpi-card">
+    <div class="kpi-header">
+      <span>Total Footprint</span>
+      <div class="kpi-icon total"><i class="fa-solid fa-smog"></i></div>
+    </div>
+    <div class="kpi-value">{{ summary.total_emissions }}</div>
+    <div class="kpi-unit">kg CO2e estimated</div>
+    <div class="kpi-footer">
+      <i class="fa-solid fa-circle-info"></i> Documented factors applied
+    </div>
+  </div>
+
+  <!-- Transportation Emissions -->
+  <div class="card kpi-card transport">
+    <div class="kpi-header">
+      <span>Transportation</span>
+      <div class="kpi-icon transport"><i class="fa-solid fa-motorcycle"></i></div>
+    </div>
+    <div class="kpi-value">{{ summary.category_totals.transportation }}</div>
+    <div class="kpi-unit">kg CO2e</div>
+    <div class="kpi-footer">
+      <i class="fa-solid fa-route"></i> Motorbike, bus & cars
+    </div>
+  </div>
+
+  <!-- Electricity Emissions -->
+  <div class="card kpi-card electricity">
+    <div class="kpi-header">
+      <span>Electricity</span>
+      <div class="kpi-icon electricity"><i class="fa-solid fa-bolt"></i></div>
+    </div>
+    <div class="kpi-value">{{ summary.category_totals.electricity }}</div>
+    <div class="kpi-unit">kg CO2e (CEA Grid: 0.716)</div>
+    <div class="kpi-footer">
+      <i class="fa-solid fa-indian-rupee-sign"></i> Est. Bill: ₹{{ summary.cost_totals.electricity }}
+    </div>
+  </div>
+
+  <!-- Fuel & Waste Combined -->
+  <div class="card kpi-card fuel">
+    <div class="kpi-header">
+      <span>Fuel & Waste</span>
+      <div class="kpi-icon fuel"><i class="fa-solid fa-fire"></i></div>
+    </div>
+    <div class="kpi-value">{{ (summary.category_totals.fuel + summary.category_totals.waste) | round(2) }}</div>
+    <div class="kpi-unit">kg CO2e (LPG: {{ summary.category_totals.fuel }} | Waste: {{ summary.category_totals.waste }})</div>
+    <div class="kpi-footer">
+      <i class="fa-solid fa-recycle"></i> IPCC waste & fuel factors
+    </div>
+  </div>
+</div>
+
+<!-- Verified Impact & Challenge Stats Strip -->
+<div class="grid-3">
+  <div class="card" style="display: flex; align-items: center; gap: 1rem;">
+    <div style="width: 50px; height: 50px; border-radius: var(--radius-md); background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+      <i class="fa-solid fa-shield-halved"></i>
+    </div>
+    <div>
+      <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Verified Reductions</div>
+      <div style="font-size: 1.5rem; font-weight: 800; color: #059669;">{{ emissions_avoided }} kg CO2e</div>
+      <div style="font-size: 0.78rem; color: var(--text-muted);">From AI-verified photo evidence</div>
+    </div>
+  </div>
+
+  <div class="card" style="display: flex; align-items: center; gap: 1rem;">
+    <div style="width: 50px; height: 50px; border-radius: var(--radius-md); background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+      <i class="fa-solid fa-bullseye"></i>
+    </div>
+    <div>
+      <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Challenge Actions</div>
+      <div style="font-size: 1.5rem; font-weight: 800; color: #0284c7;">{{ completed_challenges }} Completed</div>
+      <div style="font-size: 0.78rem; color: var(--text-muted);">{{ active_challenges }} active &bull; {{ pending_challenges }} under AI verification</div>
+    </div>
+  </div>
+
+  <div class="card" style="display: flex; align-items: center; gap: 1rem;">
+    <div style="width: 50px; height: 50px; border-radius: var(--radius-md); background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+      <i class="fa-solid fa-trophy"></i>
+    </div>
+    <div>
+      <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Behavioral Rewards</div>
+      <div style="font-size: 1.5rem; font-weight: 800; color: #d97706;">{{ points_info.total_earned }} Pts Earned</div>
+      <div style="font-size: 0.78rem; color: var(--text-muted);">{{ points_info.total_redeemed }} pts redeemed for vouchers</div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row: Breakdown Doughnut & Comparison Bar -->
+<div class="grid-2">
+  <div class="card">
+    <h2 class="card-title">
+      <i class="fa-solid fa-chart-pie" style="color: var(--primary);"></i> Category-Wise Carbon Breakdown
+    </h2>
+    <div style="position: relative; height: 260px; display: flex; align-items: center; justify-content: center;">
+      <canvas id="categoryDoughnutChart"></canvas>
+    </div>
+    <div style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted); text-align: center;">
+      Central Electricity Authority (0.716 kg/kWh) &bull; DEFRA Transport &bull; IPCC Waste & Fuel
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 class="card-title">
+      <i class="fa-solid fa-ranking-star" style="color: var(--secondary);"></i> Top Emission Contributors
+    </h2>
+    {% if summary.top_activities %}
+      <div style="display: flex; flex-direction: column; gap: 0.85rem; margin-top: 0.5rem;">
+        {% for act in summary.top_activities %}
+          <div style="background: var(--border-subtle); padding: 0.85rem 1rem; border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-weight: 700; font-size: 0.92rem;">{{ act.activity_name }}</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted);">
+                Logged: {{ act.input_sum }} {{ act.input_unit }} &bull; Category: <span style="text-transform: capitalize;">{{ act.category }}</span>
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-size: 1.1rem; font-weight: 800; color: var(--text-main);">{{ act.sub_total | round(2) }}</div>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">kg CO2e</div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p style="color: var(--text-muted); font-size: 0.9rem;">No activity records yet. Start by logging your travel or electricity in the calculator!</p>
+    {% endif %}
+
+    <div style="margin-top: 1.25rem; text-align: right;">
+      <a href="{{ url_for('view_recommendations') }}" class="btn btn-sm btn-outline">
+        View Targeted Reduction Steps &rarr;
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Priority Reduction Actions Preview -->
+<div style="margin-bottom: 2rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <div>
+      <h2 style="font-size: 1.3rem; font-weight: 800; color: var(--primary-dark);">Personalized Reduction Challenges</h2>
+      <p style="font-size: 0.85rem; color: var(--text-muted);">Targeting your highest carbon sources with documented alternatives and reward points</p>
+    </div>
+    <a href="{{ url_for('view_recommendations') }}" class="btn btn-sm btn-secondary">
+      View All Actions ({{ recommendations | length }}) &rarr;
+    </a>
+  </div>
+
+  <div class="grid-3">
+    {% for rec in recommendations %}
+      <div class="rec-card {{ 'priority-card' if rec.is_top_priority else '' }}">
+        <div>
+          {% if rec.is_top_priority %}
+            <span class="rec-badge-priority">
+              <i class="fa-solid fa-fire"></i> Top Impact
+            </span>
+          {% endif %}
+          
+          <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 0.35rem;">
+            <i class="fa-solid {{ rec.icon }}"></i> {{ rec.category }}
+          </div>
+          <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-main);">
+            {{ rec.title }}
+          </h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+            {{ rec.why_recommended }}
+          </p>
+
+          <div class="rec-impact-grid">
+            <div class="rec-impact-item">
+              <div class="label">Reduction</div>
+              <div class="val">-{{ rec.emissions_diff }} <span style="font-size: 0.7rem;">kg</span></div>
+            </div>
+            <div class="rec-impact-item">
+              <div class="label">Savings</div>
+              <div class="val">{% if rec.financial_savings > 0 %}₹{{ rec.financial_savings | int }}{% else %}Eco{% endif %}</div>
+            </div>
+            <div class="rec-impact-item">
+              <div class="label">Points</div>
+              <div class="val" style="color: #d97706;">+{{ rec.reward_points }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+          <span class="badge badge-{{ 'completed' if rec.status == 'completed' else ('pending' if 'submitted' in rec.status else ('accepted' if rec.status == 'accepted' else 'available')) }}">
+            {{ rec.status }}
+          </span>
+          {% if rec.status == 'available' %}
+            <form action="{{ url_for('accept_challenge', challenge_id=rec.challenge_id) }}" method="POST">
+              <button type="submit" class="btn btn-sm btn-primary">
+                <i class="fa-solid fa-check"></i> Accept Challenge
+              </button>
+            </form>
+          {% elif rec.status == 'accepted' %}
+            <a href="{{ url_for('evidence_upload', challenge_id=rec.challenge_id) }}" class="btn btn-sm btn-success">
+              <i class="fa-solid fa-camera"></i> Upload AI Proof
+            </a>
+          {% else %}
+            <a href="{{ url_for('evidence_upload') }}" class="btn btn-sm btn-secondary">View Proof</a>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Recent Activity Log Table -->
+<div class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h2 class="card-title" style="margin-bottom: 0;">
+      <i class="fa-solid fa-clock-rotate-left"></i> Recent Activity Log
+    </h2>
+    <a href="{{ url_for('progress') }}" class="btn btn-sm btn-secondary">Full Audit Trail &rarr;</a>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Period</th>
+          <th>Category</th>
+          <th>Activity</th>
+          <th>Input Value</th>
+          <th>Factor Applied</th>
+          <th>Estimated Emissions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if recent_activities %}
+          {% for r in recent_activities %}
+            <tr>
+              <td>{{ r.record_date }}</td>
+              <td><span class="badge badge-available">{{ r.reporting_period }}</span></td>
+              <td style="text-transform: capitalize;"><strong>{{ r.category }}</strong></td>
+              <td>{{ r.activity_name }}</td>
+              <td>{{ r.input_value }} {{ r.input_unit }}</td>
+              <td style="font-size: 0.8rem; color: var(--text-muted);">{{ r.emission_factor }} kg CO2e/unit</td>
+              <td><strong>{{ r.emissions_kg_co2e }} kg CO2e</strong></td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+              No activity records logged yet. Use the Carbon Footprint Calculator to get started.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  // 1. Chart.js Doughnut Chart
+  const ctx = document.getElementById("categoryDoughnutChart");
+  if (ctx) {
+    const transportTotal = {{ summary.category_totals.transportation | default(0) }};
+    const elecTotal = {{ summary.category_totals.electricity | default(0) }};
+    const fuelTotal = {{ summary.category_totals.fuel | default(0) }};
+    const wasteTotal = {{ summary.category_totals.waste | default(0) }};
+
+    new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        labels: ["Transportation", "Electricity", "Fuel", "Waste"],
+        datasets: [{
+          data: [transportTotal, elecTotal, fuelTotal, wasteTotal],
+          backgroundColor: ["#3b82f6", "#f59e0b", "#ef4444", "#10b981"],
+          borderWidth: 2,
+          borderColor: "#ffffff"
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: { boxWidth: 12, font: { size: 11 } }
+          }
+        },
+        cutout: "68%"
+      }
+    });
+  }
+
+  // 2. Real-Time AI Verification Status Polling (Auto-updates without refreshing within 2 mins!)
+  const countdownEl = document.getElementById("countdownTimer");
+  if (countdownEl) {
+    let timeLeft = parseInt(countdownEl.innerText) || 45;
+    const timerInterval = setInterval(function() {
+      if (timeLeft > 0) {
+        timeLeft--;
+        countdownEl.innerText = timeLeft;
+        const progressEl = document.getElementById("aiScanProgress");
+        if (progressEl) {
+          const pct = Math.min(100, Math.round(((60 - timeLeft) / 60) * 100));
+          progressEl.style.width = pct + "%";
+        }
+      }
+    }, 1000);
+
+    // Poll server every 4 seconds to check if AI verification finalized
+    const pollInterval = setInterval(function() {
+      fetch("/api/verification_status")
+        .then(response => response.json())
+        .then(data => {
+          if (data && data.status_data) {
+            const st = data.status_data.ai_status;
+            if (st === "verified") {
+              clearInterval(timerInterval);
+              clearInterval(pollInterval);
+              // Reload or update DOM smoothly
+              window.location.reload();
+            }
+          }
+        })
+        .catch(err => console.log("AI Polling...", err));
+    }, 4000);
+  }
+});
+</script>
+{% endblock %}

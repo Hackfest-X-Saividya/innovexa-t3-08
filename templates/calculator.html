@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Carbon Footprint Calculator</h1>
+    <p class="page-subtitle">Input your daily or monthly consumption data to compute precise estimated greenhouse gas emissions</p>
+  </div>
+  <div>
+    <a href="{{ url_for('simulator') }}" class="btn btn-secondary">
+      <i class="fa-solid fa-sliders"></i> Open Reduction Simulator &rarr;
+    </a>
+  </div>
+</div>
+
+<div class="grid-2">
+  <!-- Calculator Entry Form -->
+  <div class="card">
+    <h2 class="card-title">
+      <i class="fa-solid fa-pen-to-square" style="color: var(--primary);"></i> Log Activity & Emissions
+    </h2>
+
+    <form action="{{ url_for('calculator') }}" method="POST">
+      <!-- Reporting Period & Date -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label class="form-label" for="reporting_period">Reporting Period</label>
+          <select class="form-select" id="reporting_period" name="reporting_period">
+            <option value="monthly" selected>Monthly Accounting</option>
+            <option value="daily">Daily Commute / Log</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="record_date">Date of Record</label>
+          <input type="date" class="form-control" id="record_date" name="record_date" value="2026-10-28">
+        </div>
+      </div>
+
+      <!-- Category Selection -->
+      <div class="form-group">
+        <label class="form-label" for="calc_category">Select Emission Category</label>
+        <select class="form-select" id="calc_category" name="category" required>
+          <option value="transportation" selected>Transportation (Commuting, Bus, Bike, Car)</option>
+          <option value="electricity">Electricity Consumption (Utility Grid / Solar)</option>
+          <option value="fuel">Fuel Usage (LPG Cooking Gas, Petrol, Diesel, CNG)</option>
+          <option value="waste">Waste Generation (Landfill vs Composting & Recycling)</option>
+        </select>
+      </div>
+
+      <!-- PANEL 1: TRANSPORTATION -->
+      <div class="calc-category-panel" id="panel-transportation">
+        <div class="form-group">
+          <label class="form-label" for="trans_mode">Travel Mode</label>
+          <select class="form-select calc-dynamic-input" id="trans_mode" name="trans_mode">
+            {% for key, item in factors.transportation.items() %}
+              <option value="{{ key }}" data-factor="{{ item.factor }}" data-unit="{{ item.unit }}" {% if key == 'motorcycle' %}selected{% endif %}>
+                {{ item.name }} &mdash; {{ item.factor }} {{ item.unit }}
+              </option>
+            {% endfor %}
+          </select>
+          <div class="form-help">Factors from UK DESNZ / DEFRA 2023 & Indian ARAI urban commute database.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="trans_distance">Distance Travelled (Kilometres)</label>
+          <input type="number" step="0.1" min="0" class="form-control calc-dynamic-input" id="trans_distance" name="trans_distance" value="15" placeholder="e.g. 15 km daily or 300 km monthly">
+        </div>
+      </div>
+
+      <!-- PANEL 2: ELECTRICITY -->
+      <div class="calc-category-panel" id="panel-electricity" style="display: none;">
+        <div class="form-group">
+          <label class="form-label" for="elec_kwh">Electricity Consumed (kWh / Units)</label>
+          <input type="number" step="0.5" min="0" class="form-control calc-dynamic-input" id="elec_kwh" name="elec_kwh" value="150" placeholder="e.g. 150 kWh from monthly meter bill">
+          <div class="form-help">Read directly from monthly power bill or submeter.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="elec_grid">Grid Mix / Source</label>
+          <select class="form-select calc-dynamic-input" id="elec_grid" name="elec_grid">
+            {% for key, item in factors.electricity.items() %}
+              <option value="{{ key }}" data-factor="{{ item.factor }}" data-unit="{{ item.unit }}" {% if key == 'grid_national' %}selected{% endif %}>
+                {{ item.name }} &mdash; {{ item.factor }} {{ item.unit }}
+              </option>
+            {% endfor %}
+          </select>
+          <div class="form-help">Official baseline: CEA CO2 Baseline Database for Indian Power Sector v20.0 (0.716 kg CO2/kWh).</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="elec_tariff">Applicable Tariff Rate (₹ INR / kWh)</label>
+          <input type="number" step="0.1" min="1" class="form-control calc-dynamic-input" id="elec_tariff" name="elec_tariff" value="7.00">
+          <div class="form-help">Used to estimate financial bill cost and potential savings. Standard Indian slab: ₹7.00/kWh.</div>
+        </div>
+      </div>
+
+      <!-- PANEL 3: FUEL -->
+      <div class="calc-category-panel" id="panel-fuel" style="display: none;">
+        <div class="form-group">
+          <label class="form-label" for="fuel_type">Fuel Type</label>
+          <select class="form-select calc-dynamic-input" id="fuel_type" name="fuel_type">
+            {% for key, item in factors.fuel.items() %}
+              <option value="{{ key }}" data-factor="{{ item.factor }}" data-unit="{{ item.unit }}" {% if key == 'lpg' %}selected{% endif %}>
+                {{ item.name }} &mdash; {{ item.factor }} {{ item.unit }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="fuel_qty">Quantity Consumed</label>
+          <input type="number" step="0.1" min="0" class="form-control calc-dynamic-input" id="fuel_qty" name="fuel_qty" value="14.2" placeholder="e.g. 14.2 for 1 cylinder or litres for petrol">
+        </div>
+
+        <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+          <input type="checkbox" id="is_cylinder" name="is_cylinder" value="1" style="width: 18px; height: 18px;">
+          <label for="is_cylinder" style="font-size: 0.85rem; font-weight: 600;">Check if entered quantity is number of 14.2 kg LPG cylinders</label>
+        </div>
+      </div>
+
+      <!-- PANEL 4: WASTE -->
+      <div class="calc-category-panel" id="panel-waste" style="display: none;">
+        <div class="form-group">
+          <label class="form-label" for="waste_type">Waste Treatment / Stream</label>
+          <select class="form-select calc-dynamic-input" id="waste_type" name="waste_type">
+            {% for key, item in factors.waste.items() %}
+              <option value="{{ key }}" data-factor="{{ item.factor }}" data-unit="{{ item.unit }}" {% if key == 'mixed_landfill' %}selected{% endif %}>
+                {{ item.name }} &mdash; {{ item.factor }} {{ item.unit }}
+              </option>
+            {% endfor %}
+          </select>
+          <div class="form-help">IPCC Guidelines Tier 1 methodology for waste methane commitment.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="waste_kg">Quantity of Waste (Kilograms)</label>
+          <input type="number" step="0.5" min="0" class="form-control calc-dynamic-input" id="waste_kg" name="waste_kg" value="10" placeholder="e.g. 10 kg">
+        </div>
+      </div>
+
+      <!-- Notes Field -->
+      <div class="form-group">
+        <label class="form-label" for="notes">Notes / Location / Purpose (Optional)</label>
+        <input type="text" class="form-control" id="notes" name="notes" placeholder="e.g. Daily hostel commute, Lab lighting, Canteen cooking">
+      </div>
+
+      <!-- Live Calculation Preview Card -->
+      <div style="background: var(--primary-light); border: 1px solid var(--primary-border); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.5rem;">
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--primary-dark); text-transform: uppercase;">
+          <i class="fa-solid fa-calculator"></i> Real-Time Calculation Formula
+        </div>
+        <div id="liveCalculationPreview" style="font-size: 0.95rem; color: var(--primary-dark); margin-top: 0.35rem;">
+          Estimated: 15 km × 0.084 kg CO2e/km = <strong>1.26 kg CO2e</strong>
+        </div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
+          Formula: Estimated Emissions = Activity Data × Documented Emission Factor
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%;">
+        <i class="fa-solid fa-cloud-arrow-up"></i> Record Activity in Footprint
+      </button>
+    </form>
+  </div>
+
+  <!-- Documented Emission Factors Reference & Methodology Box -->
+  <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+    <div class="card">
+      <h2 class="card-title">
+        <i class="fa-solid fa-book-bookmark" style="color: var(--secondary);"></i> Official Data Sources & Factors
+      </h2>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Green Pulse uses verified, scientifically documented emission factors without invented metrics or unvalidated claims.
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <div style="border-left: 3px solid #f59e0b; padding-left: 0.75rem;">
+          <div style="font-weight: 700; font-size: 0.88rem;">Electricity Grid Baseline: 0.716 kg CO2/kWh</div>
+          <div style="font-size: 0.78rem; color: var(--text-muted);">
+            Source: Central Electricity Authority (CEA), Ministry of Power, Govt. of India. CO2 Baseline Database for the Indian Power Sector, Version 20.0 (2024). Weighted average of all grid-connected thermal, hydro, nuclear, and RE plants.
+          </div>
+        </div>
+
+        <div style="border-left: 3px solid #3b82f6; padding-left: 0.75rem;">
+          <div style="font-weight: 700; font-size: 0.88rem;">Transportation Factors: 0.054 to 0.170 kg CO2e/km</div>
+          <div style="font-size: 0.78rem; color: var(--text-muted);">
+            Source: UK Department for Energy Security and Net Zero (DESNZ) / DEFRA 2023 greenhouse gas reporting conversion factors, adjusted with ARAI Indian road condition commuter metrics.
+          </div>
+        </div>
+
+        <div style="border-left: 3px solid #ef4444; padding-left: 0.75rem;">
+          <div style="font-weight: 700; font-size: 0.88rem;">LPG & Fuels: 2.983 kg CO2e/kg (LPG) & 2.31 kg/L (Petrol)</div>
+          <div style="font-size: 0.78rem; color: var(--text-muted);">
+            Source: IPCC 2006 Guidelines for National Greenhouse Gas Inventories, Energy Volume, Stationary and Mobile Combustion. 1 standard domestic 14.2 kg LPG cylinder = ~42.36 kg CO2e.
+          </div>
+        </div>
+
+        <div style="border-left: 3px solid #10b981; padding-left: 0.75rem;">
+          <div style="font-weight: 700; font-size: 0.88rem;">Waste Methane Commitment: 0.580 kg CO2e/kg</div>
+          <div style="font-size: 0.78rem; color: var(--text-muted);">
+            Source: IPCC Waste Model for solid waste disposal. Unsegregated organic waste decomposing anaerobically in unmanaged landfills generates fugitive CH4 (28x GWP of CO2). Composting diverts this to aerobic low-carbon decay (0.100 kg CO2e/kg).
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="background: #fafafa;">
+      <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.5rem;">
+        <i class="fa-solid fa-triangle-exclamation" style="color: var(--accent);"></i> Calculation Assumptions & Limitations
+      </h3>
+      <ul style="font-size: 0.8rem; color: var(--text-muted); padding-left: 1.25rem; line-height: 1.6;">
+        <li>Calculations represent defensible estimates, not direct real-time laboratory gas spectrometry measurements.</li>
+        <li>Bus emission factor assumes an average city occupancy of 40 passengers. If a bus runs empty, per-passenger emissions vary.</li>
+        <li>Electricity bill estimations are based on default state slab tariff (₹7.00/kWh) and do not include fixed meter demand charges or local municipal duties.</li>
+        <li>To avoid double-counting, electricity consumed for charging electric vehicles should be logged either under Transport EV or Electricity, not both.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

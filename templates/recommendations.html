@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Personalized Reduction Opportunities</h1>
+    <p class="page-subtitle">Custom-tailored interventions prioritized by your highest emissions sources (CEA / DEFRA / IPCC verified)</p>
+  </div>
+  <div>
+    <a href="{{ url_for('challenges') }}" class="btn btn-secondary">
+      <i class="fa-solid fa-bullseye"></i> View Enrolled Challenges &rarr;
+    </a>
+  </div>
+</div>
+
+<!-- Category Insight Callout Banner -->
+<div class="card" style="margin-bottom: 2rem; background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%); border-color: var(--primary-border);">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--primary-dark); letter-spacing: 0.5px;">
+        <i class="fa-solid fa-crosshairs"></i> Top Carbon Focus Area
+      </span>
+      <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--primary-dark); text-transform: capitalize; margin-top: 0.2rem;">
+        {{ summary.top_category }} represents your largest reduction opportunity
+      </h3>
+      <p style="font-size: 0.88rem; color: #065f46; margin-top: 0.25rem;">
+        Targeted recommendations below are calibrated directly from your recorded consumption of {{ summary.category_totals[summary.top_category] }} kg CO2e.
+      </p>
+    </div>
+    <div style="text-align: right;">
+      <a href="{{ url_for('calculator') }}" class="btn btn-sm btn-primary">
+        <i class="fa-solid fa-plus-circle"></i> Log More Activity Data
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Recommendations List: Each card has all 12 criteria -->
+<div style="display: flex; flex-direction: column; gap: 1.75rem;">
+  {% for rec in recommendations %}
+    <div class="card" style="border-left: 5px solid {{ '#059669' if rec.is_top_priority else '#cbd5e1' }}; position: relative;">
+      
+      <!-- Top Meta Bar -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <span style="width: 34px; height: 34px; border-radius: var(--radius-md); background: var(--primary-light); color: var(--primary-dark); display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+            <i class="fa-solid {{ rec.icon }}"></i>
+          </span>
+          <span style="font-size: 0.8rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted); letter-spacing: 0.5px;">
+            {{ rec.category }} &bull; Difficulty: {{ rec.difficulty }}
+          </span>
+          {% if rec.is_top_priority %}
+            <span class="badge" style="background: #fef3c7; color: #92400e; font-size: 0.72rem;">
+              <i class="fa-solid fa-star"></i> High Priority for Your Profile
+            </span>
+          {% endif %}
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <!-- 11. Potential reward points -->
+          <span class="badge" style="background: #fef3c7; color: #b45309; font-size: 0.85rem; padding: 0.35rem 0.75rem;">
+            <i class="fa-solid fa-award"></i> +{{ rec.reward_points }} Points
+          </span>
+          <!-- 12. Challenge status -->
+          <span class="badge badge-{{ 'completed' if rec.status == 'completed' else ('pending' if 'submitted' in rec.status else ('accepted' if rec.status == 'accepted' else 'available')) }}">
+            Status: {{ rec.status | capitalize }}
+          </span>
+        </div>
+      </div>
+
+      <!-- 1. Challenge title -->
+      <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem;">
+        {{ rec.title }}
+      </h2>
+
+      <!-- 2. Explanation of why it is recommended -->
+      <p style="font-size: 0.92rem; color: #334155; margin-bottom: 1.25rem; background: #f8fafc; padding: 0.75rem 1rem; border-radius: var(--radius-md); border-left: 3px solid var(--secondary);">
+        <strong><i class="fa-solid fa-circle-question"></i> Why Recommended:</strong> {{ rec.why_recommended }}
+      </p>
+
+      <!-- Comparison Metrics Grid (Criteria 3, 4, 5, 6, 7, 8) -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+        
+        <!-- 3. Baseline Activity & 5. Emissions Before -->
+        <div style="background: #fff; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.85rem;">
+          <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">
+            Baseline Activity (Current)
+          </div>
+          <div style="font-size: 0.88rem; color: var(--text-main); font-weight: 600; margin: 0.35rem 0;">
+            {{ rec.baseline_activity }}
+          </div>
+          <div style="font-size: 0.82rem; color: #ef4444; font-weight: 700;">
+            Est. {{ rec.emissions_before }} kg CO2e
+          </div>
+        </div>
+
+        <!-- 4. Proposed Alternative & 6. Emissions After -->
+        <div style="background: #fff; border: 1px solid var(--primary-border); border-radius: var(--radius-md); padding: 0.85rem;">
+          <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--primary-dark); font-weight: 600;">
+            Proposed Sustainable Target
+          </div>
+          <div style="font-size: 0.88rem; color: var(--primary-dark); font-weight: 600; margin: 0.35rem 0;">
+            {{ rec.proposed_alternative }}
+          </div>
+          <div style="font-size: 0.82rem; color: var(--primary); font-weight: 700;">
+            Est. {{ rec.emissions_after }} kg CO2e
+          </div>
+        </div>
+
+        <!-- 7. Estimated Difference & 8. Financial Savings -->
+        <div style="background: #ecfdf5; border: 1px solid var(--primary-border); border-radius: var(--radius-md); padding: 0.85rem; text-align: center;">
+          <div style="font-size: 0.75rem; text-transform: uppercase; color: #047857; font-weight: 600;">
+            Estimated Avoidance
+          </div>
+          <div style="font-size: 1.5rem; font-weight: 800; color: #059669; margin: 0.2rem 0;">
+            -{{ rec.emissions_diff }} <span style="font-size: 0.85rem; font-weight: 600;">kg CO2e</span>
+          </div>
+          <div style="font-size: 0.8rem; font-weight: 700; color: #0284c7;">
+            {% if rec.financial_savings > 0 %}
+              <i class="fa-solid fa-wallet"></i> Est. Savings: ₹{{ rec.financial_savings | round(0) | int }}
+            {% else %}
+              Civic / Environmental Benefit
+            {% endif %}
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 9. Instructions & 10. Required Evidence -->
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.25rem; background: #fafbfc; border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.25rem; border: 1px solid var(--border-color);">
+        <div>
+          <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.3rem;">
+            <i class="fa-solid fa-list-check"></i> Action Instructions
+          </div>
+          <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+            {{ rec.instructions }}
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.3rem;">
+            <i class="fa-solid fa-id-card"></i> Required Proof / Evidence
+          </div>
+          <div style="font-size: 0.85rem; color: #0f766e; font-weight: 600;">
+            {{ rec.evidence_type }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Button Workflow -->
+      <div style="display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem;">
+        {% if rec.status == 'available' %}
+          <form action="{{ url_for('accept_challenge', challenge_id=rec.challenge_id) }}" method="POST">
+            <button type="submit" class="btn btn-primary">
+              <i class="fa-solid fa-check"></i> Accept Challenge & Start Tracking
+            </button>
+          </form>
+        {% elif rec.status == 'accepted' %}
+          <a href="{{ url_for('evidence_upload', challenge_id=rec.challenge_id) }}" class="btn btn-success">
+            <i class="fa-solid fa-camera"></i> Submit Photo Evidence
+          </a>
+        {% elif 'submitted' in rec.status %}
+          <a href="{{ url_for('evidence_upload') }}" class="btn btn-secondary">
+            <i class="fa-solid fa-clock"></i> Submission Under Review
+          </a>
+        {% else %}
+          <span style="font-size: 0.85rem; color: var(--primary); font-weight: 700;">
+            <i class="fa-solid fa-circle-check"></i> Challenge Completed & Verified
+          </span>
+        {% endif %}
+      </div>
+
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

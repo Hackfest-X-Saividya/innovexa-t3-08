@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page_title | default('Green Pulse — Carbon Footprint Tracking, Reduction & Rewards') }}</title>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Chart.js for Visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  
+  <!-- Green Pulse Custom Styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="header-nav">
+    <div class="nav-container">
+      <!-- Brand Logo & Tagline -->
+      <a href="{{ url_for('org_dashboard' if active_mode == 'organization' else 'dashboard') }}" class="brand-wrapper">
+        <div class="brand-logo-icon" style="{{ 'background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);' if active_mode == 'organization' else '' }}">
+          <i class="fa-solid {{ 'fa-building-shield' if active_mode == 'organization' else 'fa-leaf' }}"></i>
+        </div>
+        <div class="brand-text-col">
+          <h1>Green Pulse <span style="font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; vertical-align: middle; background: {{ 'rgba(2, 132, 199, 0.15); color: #0284c7;' if active_mode == 'organization' else 'rgba(16, 185, 129, 0.15); color: #059669;' }}">{{ 'ORGANIZATION' if active_mode == 'organization' else 'INDIVIDUAL' }}</span></h1>
+          <span>{{ active_org.org_name if active_mode == 'organization' and active_org else 'Track Your Impact. Make Every Action Count.' }}</span>
+        </div>
+      </a>
+
+      <!-- Primary Navigation Links -->
+      <nav>
+        <ul class="nav-links">
+          {% if active_mode == 'organization' %}
+            <li class="nav-item">
+              <a href="{{ url_for('org_dashboard') }}" class="{{ 'active' if request.endpoint == 'org_dashboard' else '' }}">
+                <i class="fa-solid fa-chart-pie"></i> Org Dashboard
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{ url_for('org_activities') }}" class="{{ 'active' if request.endpoint == 'org_activities' else '' }}">
+                <i class="fa-solid fa-clipboard-list"></i> Activity Data
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{ url_for('org_departments_sites') }}" class="{{ 'active' if request.endpoint == 'org_departments_sites' else '' }}">
+                <i class="fa-solid fa-sitemap"></i> Depts & Sites
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{ url_for('org_challenges') }}" class="{{ 'active' if request.endpoint == 'org_challenges' else '' }}">
+                <i class="fa-solid fa-bullseye"></i> Challenges
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{ url_for('org_evidence_upload') }}" class="{{ 'active' if request.endpoint == 'org_evidence_upload' else '' }}">
+                <i class="fa-solid fa-file-arrow-up"></i> Upload Proof
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{ url_for('org_evidence_review') }}" class="{{ 'active' if request.endpoint == 'org_evidence_review' else '' }}">
+                <i class="fa-solid fa-stamp"></i> Review
+                {% if org_pending_submissions_count > 0 %}
+                  <span class="nav-badge pending">{{ org_pending_submissions_count }}</span>
+                {% endif %}
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{ url_for('org_rewards') }}" class="{{ 'active' if request.endpoint == 'org_rewards' else '' }}">
+                <i class="fa-solid fa-award"></i> Rewards
+                <span class="nav-badge" style="background: #0284c7;">{{ org_points_data.balance }} pts</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{ url_for('org_reports') }}" class="{{ 'active' if request.endpoint == 'org_reports' else '' }}">
+                <i class="fa-solid fa-file-contract"></i> ESG Reports
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{ url_for('org_profile') }}" class="{{ 'active' if request.endpoint == 'org_profile' else '' }}">
+                <i class="fa-solid fa-gear"></i> Profile
+              </a>
+            </li>
+          {% else %}
+            <li class="nav-item">
+              <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' else '' }}">
+                <i class="fa-solid fa-gauge-high"></i> Dashboard
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{ url_for('calculator') }}" class="{{ 'active' if request.endpoint == 'calculator' else '' }}">
+                <i class="fa-solid fa-calculator"></i> Calculator
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{ url_for('simulator') }}" class="{{ 'active' if request.endpoint == 'simulator' else '' }}">
+                <i class="fa-solid fa-sliders"></i> Simulator
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{ url_for('view_recommendations') }}" class="{{ 'active' if request.endpoint == 'view_recommendations' else '' }}">
+                <i class="fa-solid fa-lightbulb"></i> Actions
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{ url_for('challenges') }}" class="{{ 'active' if request.endpoint == 'challenges' else '' }}">
+                <i class="fa-solid fa-bullseye"></i> Challenges
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{ url_for('evidence_upload') }}" class="{{ 'active' if request.endpoint == 'evidence_upload' else '' }}">
+                <i class="fa-solid fa-camera"></i> AI Evidence
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{ url_for('admin_review') }}" class="{{ 'active' if request.endpoint == 'admin_review' else '' }}">
+                <i class="fa-solid fa-clipboard-check"></i> Reviewer
+                {% if pending_submissions_count > 0 %}
+                  <span class="nav-badge pending">{{ pending_submissions_count }}</span>
+                {% endif %}
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{ url_for('rewards_page') }}" class="{{ 'active' if request.endpoint == 'rewards_page' else '' }}">
+                <i class="fa-solid fa-award"></i> Rewards
+                <span class="nav-badge">{{ points_data.balance }} pts</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{ url_for('progress') }}" class="{{ 'active' if request.endpoint == 'progress' else '' }}">
+                <i class="fa-solid fa-chart-line"></i> Progress
+              </a>
+            </li>
+          {% endif %}
+        </ul>
+      </nav>
+
+      <!-- Mode Switcher Pill & User Bar -->
+      <div class="user-role-bar" style="display: flex; align-items: center; gap: 0.5rem;">
+        {% if active_mode == 'organization' %}
+          <a href="{{ url_for('switch_mode', mode='individual') }}" class="btn btn-sm btn-outline-success" title="Switch to Individual Mode (Aarav Sharma)" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-weight: 600; font-size: 0.78rem; border: 1.5px solid #10b981; color: #047857; background: #ecfdf5; text-decoration: none;">
+            <i class="fa-solid fa-user"></i> Mode: Individual
+          </a>
+        {% else %}
+          <a href="{{ url_for('switch_mode', mode='organization') }}" class="btn btn-sm btn-outline-primary" title="Switch to Organization Mode (Campus/Industry)" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-weight: 600; font-size: 0.78rem; border: 1.5px solid #0284c7; color: #0369a1; background: #e0f2fe; text-decoration: none;">
+            <i class="fa-solid fa-building"></i> Mode: Organization
+          </a>
+        {% endif %}
+
+        {% if is_authenticated %}
+          <div class="role-switch-pill">
+            <i class="fa-solid fa-user-circle"></i>
+            <span style="max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ current_user.full_name }}</span>
+            <span class="role-tag {{ current_user.role }}">{{ current_user.role | upper }}</span>
+            <a href="{{ url_for('logout') }}" class="btn btn-sm btn-secondary" style="margin-left: 0.25rem;" title="Sign out">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            </a>
+          </div>
+        {% else %}
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <a href="{{ url_for('login') }}" class="btn btn-sm btn-secondary">
+              <i class="fa-solid fa-right-to-bracket"></i> Sign In
+            </a>
+            <a href="{{ url_for('register') }}" class="btn btn-sm btn-primary">
+              <i class="fa-solid fa-user-plus"></i> Register
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <!-- Flash Alerts Notification System -->
+  <div class="flash-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">
+            <div>
+              <i class="fa-solid {{ 'fa-check-circle' if category == 'success' else ('fa-info-circle' if category == 'info' else ('fa-exclamation-triangle' if category == 'warning' else 'fa-times-circle')) }}"></i>
+              <span style="margin-left: 0.5rem;">{{ message }}</span>
+            </div>
+            <button onclick="this.parentElement.remove()" style="background: none; border: none; cursor: pointer; color: inherit; font-size: 1.1rem;">&times;</button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  <!-- Main Body Content -->
+  <main class="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Application Footer -->
+  <footer class="app-footer">
+    <div class="footer-inner">
+      <div>
+        <strong>Green Pulse</strong> — Track Your Impact. Make Every Action Count.
+        <br>
+        <span style="font-size: 0.78rem;">Built for GreenTech & Impact Hackathon. Sourced from Central Electricity Authority (CEA) India v20.0, UK DESNZ / DEFRA, and IPCC Guidelines.</span>
+      </div>
+      <div style="display: flex; gap: 1rem; align-items: center;">
+        <div class="role-switch-pill" style="font-size: 0.75rem;" title="Quick switch demo role for judges">
+          <i class="fa-solid fa-user-gear"></i>
+          <span>Judge Demo Persona:</span>
+          {% if current_user.role == 'user' %}
+            <a href="{{ url_for('switch_role', user_id=2, next=request.path) }}" style="color: #92400e; font-weight: bold; text-decoration: underline;">
+              Switch to Admin Mode (Dr. Priya)
+            </a>
+          {% else %}
+            <a href="{{ url_for('switch_role', user_id=1, next=request.path) }}" style="color: #1e40af; font-weight: bold; text-decoration: underline;">
+              Switch to Student Mode (Aarav)
+            </a>
+          {% endif %}
+        </div>
+
+        <form action="{{ url_for('demo_reset') }}" method="POST" onsubmit="return confirm('Reset database back to initial sample state for a fresh demonstration?');" style="display: inline;">
+          <button type="submit" class="btn btn-sm btn-secondary" title="Reset all test records to fresh sample data">
+            <i class="fa-solid fa-rotate-left"></i> Reset Demo State
+          </button>
+        </form>
+        <span style="font-size: 0.8rem; color: var(--text-muted);">&copy; {{ now_year }} Green Pulse Team</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Main JavaScript File -->
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
